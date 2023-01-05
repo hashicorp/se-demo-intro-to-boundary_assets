@@ -1,2 +1,2 @@
 # se-demo-intro-to-boundary_assets
-Terraform config, scripts and other assets for the Intro to Boundary Instruqt demo.
+Initial development of Terraform code for an Intro to Boundary Instruqt track.
