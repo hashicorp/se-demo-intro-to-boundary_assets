@@ -11,29 +11,23 @@ variable "aws_ami" {
   type = string
 }
 
-variable "create_postgres" {
-  type = bool
-  default = true
-}
-
-variable "pg_subnet_id" {
+variable "vault_subnet_id" {
   type = string
 }
 
-variable "pg_secgroup_id" {
+variable "vault_secgroup_id" {
   type = string
 }
 
-variable "pg_instance_type" {
+variable "vault_instance_type" {
   type = string
   default = "t3.small"
 }
 
-variable "pg_ssh_keypair" {
+variable "vault_lb_vpc" {
   type = string
 }
 
-variable "pg_admin_user" {
+variable "vault_ssh_keypair" {
   type = string
-  default = "prod_api_admin"
 }

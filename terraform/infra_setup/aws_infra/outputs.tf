@@ -13,6 +13,11 @@ output "aws_subnet_public_id" {
   value = aws_subnet.boundary_demo_public.id
 }
 
+output "aws_secgroup_inet_id" {
+  description = "The ID of the unrestricted Internet-incoming security group created for the demo."
+  value = aws_security_group.boundary_demo_inet.id
+}
+
 output "aws_secgroup_public_id" {
   description = "The ID of the public-subnet security group created for the demo."
   value = aws_security_group.boundary_demo_public.id

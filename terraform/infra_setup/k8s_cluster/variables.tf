@@ -29,6 +29,10 @@ variable "k8s_instance_type" {
   default = "t3.small"
 }
 
+variable "k8s_nodeport_lb_vpc" {
+  type = string
+}
+
 variable "k8s_boundary_worker_lb_subnet_id" {
   type = string
 }

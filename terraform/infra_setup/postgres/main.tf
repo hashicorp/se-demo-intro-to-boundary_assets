@@ -16,7 +16,7 @@ locals {
       {
         content = file("${path.root}/gpg_pubkeys/hashicorp-archive-keyring.gpg")
         owner = "root:root"
-        path = "/usr/share/keyrings/hashicorp-archive-keyring.gpg"
+        path = "/tmp/hashicorp-archive-keyring.gpg"
         permissions = "0644"
       },
       {
@@ -35,12 +35,13 @@ locals {
       [ "systemctl", "disable", "--now", "unattended-upgrades.service", "apt-daily-upgrade.service", "apt-daily-upgrade.timer" ],
       [ "apt", "install", "-y", "software-properties-common" ],
       [ "apt-add-repository", "universe" ],
+      [ "sh", "-c", "gpg --dearmor < /tmp/hashicorp-archive-keyring.gpg > /usr/share/keyrings/hashicorp-archive-keyring.gpg" ],
       [ "sh", "-c", "echo \"deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main\" > /etc/apt/sources.list.d/hashicorp.list" ],
       [ "apt", "update" ],
       [ "sh", "-c", "UCF_FORCE_CONFFOLD=true apt upgrade -y" ],
       [ "apt", "install", "-y", "bind9-dnsutils", "jq", "curl", "unzip", "docker-compose" ], 
       [ "systemctl", "enable", "--now", "apt-daily-upgrade.service", "apt-daily-upgrade.timer", "docker" ],
-      [ "docker", "run", "-d", "--restart", "unless-stopped", "-p", "5432:5432", "-e", "POSTGRES_USER=${var.pg_admin_user}", "-e", "POSTGRES_PASSWORD=${random_pet.admin_password.id}", "hashicorpdemoapp/product-api-db" ]
+      [ "docker", "run", "-d", "--restart", "unless-stopped", "-p", "5432:5432", "-e", "POSTGRES_USER=${var.pg_admin_user}", "-e", "POSTGRES_PASSWORD=${random_pet.admin_password.id}", "hashicorpdemoapp/product-api-db:v0.0.22" ]
     ]
   }
 }

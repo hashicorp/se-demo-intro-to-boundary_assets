@@ -33,6 +33,11 @@ output "aws_subnet_private" {
   value = module.aws_infra.aws_subnet_private_id
 }
 
+output "aws_secgroup_inet" {
+  description = "The AWS VPC Internet-incoming security group ID."
+  value = module.aws_infra.aws_secgroup_inet_id
+}
+
 output "aws_secgroup_public" {
   description = "The AWS VPC public security group ID."
   value = module.aws_infra.aws_secgroup_public_id
@@ -51,4 +56,9 @@ output "postgres_server" {
 output "k8s_cluster_api" {
   description = "The Kubernetes cluster API endpoint hostname and IP (if any)."
   value = jsonencode({"hostname"="${module.k8s_cluster.dns}","private_ip"="${module.k8s_cluster.ip_private}"})
+}
+
+output "vault_server" {
+  description = "The Vault server hostname and IP created."
+  value = jsonencode({"hostname"="${module.vault_server.dns}","private_ip" = "${module.vault_server.ip_private}"})
 }

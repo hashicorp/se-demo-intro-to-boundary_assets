@@ -38,6 +38,17 @@ module "postgres" {
   pg_ssh_keypair = module.aws_infra.aws_ssh_keypair_app_infra
 }
 
+module "vault_server" {
+  source = "./vault_server"
+  unique_name = local.unique_name
+  aws_region = var.aws_region
+  aws_ami = module.aws_infra.aws_ami_ubuntu
+  vault_instance_type = var.aws_vault_node_instance_type
+  vault_subnet_id = module.aws_infra.aws_subnet_private_id
+  vault_secgroup_id = module.aws_infra.aws_secgroup_private_id
+  vault_ssh_keypair = module.aws_infra.aws_ssh_keypair_app_infra
+  vault_lb_vpc = module.aws_infra.aws_vpc
+}
 
 module "k8s_cluster" {
   source = "./k8s_cluster"
@@ -50,4 +61,5 @@ module "k8s_cluster" {
   k8s_boundary_worker_lb_subnet_id = module.aws_infra.aws_subnet_public_id
   k8s_boundary_worker_lb_secgroup_id = module.aws_infra.aws_secgroup_public_id
   k8s_ssh_keypair = module.aws_infra.aws_ssh_keypair_app_infra
+  k8s_nodeport_lb_vpc = module.aws_infra.aws_vpc
 }

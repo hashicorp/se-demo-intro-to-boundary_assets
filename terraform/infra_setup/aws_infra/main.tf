@@ -72,6 +72,25 @@ resource "aws_security_group" "boundary_demo_public" {
   }
 }
 
+resource "aws_security_group" "boundary_demo_inet" {
+  name = "${var.unique_name}-inet"
+  vpc_id = aws_vpc.boundary_demo.id
+  ingress {
+    description = "Unrestricted Internet access"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = [ "0.0.0.0/0" ]
+  }
+  egress {
+    description = "Unrestricted egress"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = [ "0.0.0.0/0" ]
+  }
+}
+
 resource "aws_security_group" "boundary_demo_private" {
   name = "${var.unique_name}-private"
   vpc_id = aws_vpc.boundary_demo.id
@@ -101,7 +120,7 @@ resource "aws_eip" "boundary_demo_nat_gw" {
 
 resource "aws_nat_gateway" "boundary_demo_private" {
   allocation_id = aws_eip.boundary_demo_nat_gw.allocation_id
-  subnet_id  = aws_subnet.boundary_demo_private.id
+  subnet_id  = aws_subnet.boundary_demo_public.id
   depends_on = [aws_internet_gateway.boundary_demo]
 }
 
@@ -117,4 +136,18 @@ resource "aws_route_table" "boundary_demo_public" {
 resource "aws_route_table_association" "boundary_demo_public" {
   subnet_id      = aws_subnet.boundary_demo_public.id
   route_table_id = aws_route_table.boundary_demo_public.id
+}
+
+resource "aws_route_table" "boundary_demo_private" {
+  vpc_id = aws_vpc.boundary_demo.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.boundary_demo_private.id
+  }
+}
+
+resource "aws_route_table_association" "boundary_demo_private" {
+  subnet_id      = aws_subnet.boundary_demo_private.id
+  route_table_id = aws_route_table.boundary_demo_private.id
 }

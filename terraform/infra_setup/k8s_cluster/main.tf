@@ -16,13 +16,13 @@ locals {
       {
         content = file("${path.root}/gpg_pubkeys/hashicorp-archive-keyring.gpg")
         owner = "root:root"
-        path = "/usr/share/keyrings/hashicorp-deb-key.pub"
+        path = "/tmp/hashicorp-archive-keyring.gpg"
         permissions = "0644"
       },
       {
         content = file("${path.root}/gpg_pubkeys/kubernetes-archive-keyring.gpg")
         owner = "root:root"
-        path = "/usr/share/keyrings/kubernetes-archive-keyring.gpg"
+        path = "/tmp/kubernetes-archive-keyring.gpg"
         permissions = "0644"
       },
       {
@@ -41,11 +41,13 @@ locals {
       [ "systemctl", "disable", "--now", "unattended-upgrades.service", "apt-daily-upgrade.service", "apt-daily-upgrade.timer" ],
       [ "apt", "install", "-y", "software-properties-common" ],
       [ "apt-add-repository", "universe" ],
+      [ "sh", "-c", "gpg --dearmor < /tmp/hashicorp-archive-keyring.gpg > /usr/share/keyrings/hashicorp-archive-keyring.gpg" ],
+      [ "sh", "-c", "gpg --dearmor < /tmp/kubernetes-archive-keyring.gpg > /usr/share/keyrings/kubernetes-archive-keyring.gpg" ],
       [ "sh", "-c", "echo \"deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main\" > /etc/apt/sources.list.d/hashicorp.list" ],
-      [ "sh", "-c", "echo \"deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list" ],
+      [ "sh", "-c", "echo \"deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main\" > /etc/apt/sources.list.d/kubernetes.list" ],
       [ "apt", "update" ],
       [ "sh", "-c", "UCF_FORCE_CONFFOLD=true apt upgrade -y" ],
-      [ "apt", "install", "-y", "bind9-dnsutils", "jq", "curl", "unzip", "docker-compose", "kubectl" ], 
+      [ "apt", "install", "-y", "bind9-dnsutils", "jq", "curl", "unzip", "docker-compose", "kubectl", "acl" ],
       [ "systemctl", "enable", "--now", "apt-daily-upgrade.service", "apt-daily-upgrade.timer", "docker" ],
       [ "sh", "-c", "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=\"server\" sh -" ],
       [ "setfacl", "-m", "u:ubuntu:r", "/etc/rancher/k3s/k3s.yaml" ]

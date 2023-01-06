@@ -13,6 +13,11 @@ variable "aws_vpc_cidr" {
   default = "10.11.0.0/16"
 }
 
+variable "aws_vault_node_instance_type" {
+  type = string
+  default = "m5.xlarge"
+}
+
 variable "aws_k8s_node_instance_type" {
   type = string
   default = "m5.xlarge"

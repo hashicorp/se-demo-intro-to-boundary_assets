@@ -58,7 +58,7 @@ locals {
       {
         content = file("${path.root}/gpg_pubkeys/hashicorp-archive-keyring.gpg")
         owner = "root:root"
-        path = "/usr/share/keyrings/hashicorp-archive-keyring.gpg"
+        path = "/tmp/hashicorp-archive-keyring.gpg"
         permissions = "0644"
       },
       {
@@ -89,6 +89,7 @@ locals {
       [ "systemctl", "disable", "--now", "unattended-upgrades.service", "apt-daily-upgrade.service", "apt-daily-upgrade.timer" ],
       [ "apt", "install", "-y", "software-properties-common" ],
       [ "apt-add-repository", "universe" ],
+      [ "sh", "-c", "gpg --dearmor < /tmp/hashicorp-archive-keyring.gpg > /usr/share/keyrings/hashicorp-archive-keyring.gpg" ],
       [ "sh", "-c", "echo \"deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main\" > /etc/apt/sources.list.d/hashicorp.list" ],
       [ "apt", "update" ],
       [ "sh", "-c", "UCF_FORCE_CONFFOLD=true apt upgrade -y" ],
