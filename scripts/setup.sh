@@ -132,7 +132,7 @@ done
 echo "$admin_ip_info_text"
 echo ""
 read -p "(optional) Additional admin IP to allow connections from: " admin_ip_additional
-if [[ ! -z admin_ip_additional ]] ; then
+if [[ ! -z $admin_ip_additional ]] ; then
   if [[ "$admin_ip_additional" =~ /[0-9]{1,2}$ ]] ; then
     TF_VAR_admin_ip_additional="$admin_ip_additional"
   else
