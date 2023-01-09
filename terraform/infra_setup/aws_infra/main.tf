@@ -27,7 +27,7 @@ data "aws_ami" "ubuntu" {
 }
 
 data "aws_ec2_instance_type_offerings" "instance_types" {
-  for_each = var.aws_instance_types
+  for_each = toset(var.aws_instance_types)
   location_type = "availability-zone"
   filter {
     name = "instance-type"

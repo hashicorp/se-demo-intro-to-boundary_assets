@@ -133,11 +133,13 @@ echo "$admin_ip_info_text"
 echo ""
 read -p "(optional) Additional admin IP to allow connections from: " admin_ip_additional
 if [[ ! -z $admin_ip_additional ]] ; then
-  if [[ "$admin_ip_additional" =~ /[0-9]{1,2}$ ]] ; then
-    TF_VAR_admin_ip_additional="$admin_ip_additional"
-  else
+  if [[ ! "$admin_ip_additional" =~ /[0-9]{1,2}$ ]] ; then
     TF_VAR_admin_ip_additional="${admin_ip_additional}/32"
+  else
+    TF_VAR_admin_ip_additional="$admin_ip_additional"
   fi
+else
+  TF_VAR_admin_ip_additional=""
 fi
 
 if [[ $TF_VAR_create_k8s || $TF_VAR_create_postgres || $TF_VAR_create_boundary ]]; then
