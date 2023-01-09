@@ -26,6 +26,19 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
+data "aws_ec2_instance_type_offerings" "instance_types" {
+  for_each = var.aws_instance_types
+  location_type = "availability-zone"
+  filter {
+    name = "instance-type"
+    values = [ each.key ]
+  }
+}
+
+locals {
+  usable_azs = sort(flatten(tolist(setintersection([ for az_set in data.aws_ec2_instance_type_offerings.instance_types : toset(az_set.locations) ]))))
+}
+
 resource "aws_vpc" "boundary_demo" {
   cidr_block           = var.aws_vpc_cidr
   enable_dns_hostnames = true
@@ -35,7 +48,7 @@ resource "aws_vpc" "boundary_demo" {
 resource "aws_subnet" "boundary_demo_private" {
   vpc_id            = aws_vpc.boundary_demo.id
   cidr_block        = cidrsubnet(aws_vpc.boundary_demo.cidr_block, 1, 1)
-  availability_zone = var.aws_az
+  availability_zone = local.usable_azs[0]
 }
 
 resource "aws_subnet" "boundary_demo_public" {
