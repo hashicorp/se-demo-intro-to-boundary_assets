@@ -13,8 +13,33 @@ data "http" "admin_ip_dyn" {
   url = "http://whatismyip.akamai.com/"
 }
 
+data "aws_ec2_instance_type_offerings" "postgres_azs" {
+  location_type = "availability-zone"
+  filter {
+    name = "instance-type"
+    values = [ var.aws_postgres_node_instance_type ]
+  }
+}
+
+data "aws_ec2_instance_type_offerings" "k8s_azs" {
+  location_type = "availability-zone"
+  filter {
+    name = "instance-type"
+    values = [ "aws_k8s_node_instance_type" ]
+  }
+}
+
+data "aws_ec2_instance_type_offerings" "vault_azs" {
+  location_type = "availability-zone"
+  filter {
+    name = "instance-type"
+    values = [ var.vault_node_instance_type ]
+  }
+}
+
 locals {
   admin_ip_result = "${data.http.admin_ip_dyn.response_body}/32"
+  usable_azs = tolist(setintersection(data.aws_ec2_instance_type_offerings.k8s_azs.locations, data.aws_ec2_instance_type_offerings.postgres_azs.locations, data.aws_ec2_instance_type_offerings.vault_azs.locations))
   unique_name = coalesce(var.unique_name, "${random_pet.unique_name.id}-${substr(random_integer.unique_name.result, -6, -1)}")
 }
 
@@ -24,6 +49,7 @@ module "aws_infra" {
   admin_ip = local.admin_ip_result
   admin_ip_additional = var.admin_ip_additional
   aws_region = var.aws_region
+  aws_az = local.usable_azs[0]
   aws_vpc_cidr = var.aws_vpc_cidr
 }
 

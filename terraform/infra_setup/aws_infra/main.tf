@@ -35,6 +35,7 @@ resource "aws_vpc" "boundary_demo" {
 resource "aws_subnet" "boundary_demo_private" {
   vpc_id            = aws_vpc.boundary_demo.id
   cidr_block        = cidrsubnet(aws_vpc.boundary_demo.cidr_block, 1, 1)
+  availability_zone = var.aws_az
 }
 
 resource "aws_subnet" "boundary_demo_public" {
