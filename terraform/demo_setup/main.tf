@@ -21,6 +21,7 @@ provider "boundary" {
 
 resource "boundary_worker" "hcp_pki_worker" {
   scope_id = "global"
+  name = "boundary-worker-${var.unique_name}"
   worker_generated_auth_token = ""
 }
 
@@ -102,6 +103,11 @@ locals {
       [ "systemctl", "enable", "--now", "apt-daily-upgrade.service", "apt-daily-upgrade.timer", "docker" ]
     ]
   }
+}
+
+resource "local_file" "boundary_worker_config" {
+  content = local.boundary_worker_config
+  path = "/root/boundary_config/boundary-pki-worker-config.hcl"
 }
 
 data "cloudinit_config" "boundary_worker" {
