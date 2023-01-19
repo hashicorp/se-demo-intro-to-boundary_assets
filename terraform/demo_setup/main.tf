@@ -107,7 +107,7 @@ locals {
 
 resource "local_file" "boundary_worker_config" {
   content = local.boundary_worker_config
-  path = "/root/boundary_config/boundary-pki-worker-config.hcl"
+  filename = "/root/boundary_config/boundary-pki-worker-config.hcl"
 }
 
 data "cloudinit_config" "boundary_worker" {

@@ -74,9 +74,8 @@ this is a carrier-grade NAT reserved range and IPs in it probably will
 not work here.  In that case, try a different IP identification service."
 boundary_admin_url_info_text=\
 "Your Boundary admin URL should be just the URL scheme (typically 
-`https:`) followed by 
-the hostname, and if necessary, the port.  It should not include portions 
-of the URL following the port number."
+https:) followed by the hostname, and if necessary, the port.  It 
+should not include portions of the URL following the port number."
 
 echo "$default_setup_info_text"
 echo ""
