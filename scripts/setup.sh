@@ -2,19 +2,20 @@
 
 set -euo pipefail
 
+rm -f ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
+touch ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
+
+if ! grep -E "^source ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh$" ~/.bashrc ; then
+  echo "" >> ~/.bashrc
+  echo "source ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh" >> ~/.bashrc
+fi
+
 TF_BASE="$(realpath $(dirname $0)/../terraform)"
+echo "export TF_BASE=\"$TF_BASE\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
 
 mkdir -p ${TF_BASE}/{infra_setup,demo_setup}/files
 ssh-keygen -f ${TF_BASE}/infra_setup/files/app_infra -N ""
 ssh-keygen -f ${TF_BASE}/infra_setup/files/boundary_infra -N ""
-
-rm -f ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
-touch ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
-
-if ! grep "source ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh" ~/.bashrc ; then
-  echo "" >> ~/.bashrc
-  echo "source ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh" >> ~/.bashrc
-fi
 
 TF_VAR_create_postgres=true
 TF_VAR_create_k8s=true
@@ -71,6 +72,11 @@ Note that if you use a service hosted on your ISP, you may get an
 address in the 100.64/10 network range (100.64.0.0 - 100.127.255.255) - 
 this is a carrier-grade NAT reserved range and IPs in it probably will 
 not work here.  In that case, try a different IP identification service."
+boundary_admin_url_info_text=\
+"Your Boundary admin URL should be just the URL scheme (typically 
+`https:`) followed by 
+the hostname, and if necessary, the port.  It should not include portions 
+of the URL following the port number."
 
 echo "$default_setup_info_text"
 echo ""
@@ -103,7 +109,9 @@ while [ $boundary_cluster_info_success != "true" ]; do
     echo "No valid HCP service principal entered.  Enter info for an existing "
     echo "Boundary cluster."
     echo ""
-    read -p "Boundary admin URL (not including path): " TF_VAR_boundary_cluster_admin_url
+    echo "$boundary_admin_url_info_text"
+    echo ""
+    read -p "Boundary admin URL: " TF_VAR_boundary_cluster_admin_url
     read -p "Boundary admin auth method ID (typically ampw_aaaaaaaaaa): " boundary_admin_auth_method
     read -p "Boundary admin login name: " boundary_admin_login
     read -sp "Boundary admin password: " boundary_admin_password
@@ -176,7 +184,7 @@ source ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
 
 read -p "If everything above looks correct, press Enter to deploy the infrastructure." wait_for_ok
 
-cd $TF_BASE/infra_setup
+cd ${TF_BASE}/infra_setup
 if ! terraform init ; then
   echo "Infrastructure workspace init failed." >&2
   exit 1
@@ -189,16 +197,18 @@ if ! terraform apply -auto-approve ; then
   echo "Infrastructure apply failed." >&2
   exit 1
 else
-  terraform output -json > $TF_BASE/infra_output.json
-  export TF_VAR_unique_name="$(terraform output -raw unique_name)"
-  export TF_VAR_aws_region="$(terraform output -raw aws_region)"
-  export TF_VAR_aws_ami="$(terraform output -raw aws_ami)"
-  export TF_VAR_aws_boundary_worker_subnet_id="$(terraform output -raw aws_subnet_public)"
-  export TF_VAR_aws_boundary_worker_secgroup_id="$(terraform output -raw aws_secgroup_public)"
-  export TF_VAR_aws_boundary_worker_ssh_keypair="$(terraform output -raw aws_ssh_key_boundary_infra)"
+  infra_output="$(terraform output -json)"
+  echo "$infra_output" > ${TF_BASE}/infra_output.json
+  export TF_VAR_unique_name=$(jq .unique_name.value <(echo "$infra_output"))
+  echo "export TF_VAR_unique_name=\"$TF_VAR_unique_name\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
+  export TF_VAR_aws_region=$(jq .aws_region.value <(echo "$infra_output"))
+  export TF_VAR_aws_ami=$(jq .aws_ami.value <(echo "$infra_output"))
+  export TF_VAR_aws_boundary_worker_subnet_id=$(jq .aws_boundary_worker_subnet_id.value <(echo "$infra_output"))
+  export TF_VAR_aws_boundary_worker_secgroup_id=$(jq .aws_boundary_worker_secgroup_id.value <(echo "$infra_output"))
+  export TF_VAR_aws_boundary_worker_ssh_keypair=$(jq .aws_boundary_worker_ssh_keypair.value <(echo "$infra_output"))
 fi
 if $TF_VAR_create_boundary ; then
-  cd $TF_BASE/hcp
+  cd ${TF_BASE}/hcp
   if ! terraform init ; then
     echo "HCP Boundary cluster workspace init failed." >&2
     exit 1
@@ -211,13 +221,13 @@ if $TF_VAR_create_boundary ; then
     echo "HCP Boundary cluster apply failed." >&2
     exit 1
   else
-    terraform output -json > $TF_BASE/hcp_output.json
-    TF_VAR_boundary_cluster_admin_url="$(terraform output -raw boundary_cluster_admin_url)"
-    boundary_admin_auth_method="$(terraform output -raw boundary_cluster_admin_auth_method)"
-    boundary_admin_login="$(terraform output -raw boundary_cluster_admin_login)"
-    boundary_admin_password="$(terraform output -raw boundary_cluster_admin_password)"
+    hcp_output="$(terraform output -json)"
+    echo "$hcp_output" > ${TF_BASE}/hcp_output.json
+    TF_VAR_boundary_cluster_admin_url=$(jq .boundary_cluster_admin_url.value <(echo "$hcp_output"))
+    boundary_admin_auth_method=$(jq .boundary_cluster_admin_auth_method.value <(echo "$hcp_output"))
+    boundary_admin_login=$(jq .boundary_cluster_admin_login.value <(echo "$hcp_output"))
+    boundary_admin_password=$(jq .boundary_cluster_admin_password.value <(echo "$hcp_output"))
   fi
-  cd $TF_BASE
 else
   echo "Not creating a Boundary server because one already exists."
 fi
@@ -229,6 +239,19 @@ export BOUNDARY_PASSWORD=$boundary_admin_password
 export BOUNDARY_TOKEN=$(boundary authenticate password -format json -auth-method-id $boundary_admin_auth_method -login-name $boundary_admin_login -password env://BOUNDARY_PASSWORD | jq -r '.item.attributes.token')
 echo "export BOUNDARY_TOKEN=\"$BOUNDARY_TOKEN\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
 
-cd $TF_BASE/demo_setup
-terraform init
-terraform apply -auto-approve
+cd ${TF_BASE}/demo_setup
+if ! terraform init ; then
+  echo "Boundary worker init failed." >&2
+  exit 1
+fi
+if ! terraform plan ; then
+  echo "Boundary worker plan failed." >&2
+  exit 1
+fi
+if ! terraform apply -auto-approve ; then
+  echo "Boundary worker apply failed." >&2
+  exit 1
+else
+  boundary_output="$(terraform output -json)"
+  echo "$boundary_output" > ${TF_BASE}/boundary_output.json
+fi
