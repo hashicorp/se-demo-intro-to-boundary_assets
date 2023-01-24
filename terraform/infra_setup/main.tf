@@ -30,6 +30,7 @@ module "aws_infra" {
 }
 
 module "postgres" {
+  depends_on = module.aws_infra
   source = "./postgres"
   unique_name = local.unique_name
   aws_region = var.aws_region
@@ -41,6 +42,7 @@ module "postgres" {
 }
 
 module "vault_server" {
+  depends_on = module.aws_infra
   source = "./vault_server"
   unique_name = local.unique_name
   aws_region = var.aws_region
@@ -53,6 +55,7 @@ module "vault_server" {
 }
 
 module "k8s_cluster" {
+  depends_on = module.aws_infra
   source = "./k8s_cluster"
   unique_name = local.unique_name
   aws_region = var.aws_region
