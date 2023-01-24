@@ -196,16 +196,17 @@ if ! terraform apply -auto-approve ; then
   echo "Infrastructure apply failed." >&2
   exit 1
 else
-  infra_output="$(terraform output -json)"
+  infra_output=$(terraform output -json)
   echo "$infra_output" > ${TF_BASE}/infra_output.json
-  export TF_VAR_unique_name=$(jq .unique_name.value <(echo "$infra_output"))
+  export TF_VAR_unique_name=$(jq -r .unique_name.value <(echo "$infra_output"))
   echo "export TF_VAR_unique_name=\"$TF_VAR_unique_name\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
-  export TF_VAR_aws_region=$(jq .aws_region.value <(echo "$infra_output"))
-  export TF_VAR_aws_ami=$(jq .aws_ami.value <(echo "$infra_output"))
-  export TF_VAR_aws_boundary_worker_subnet_id=$(jq .aws_subnet_public.value <(echo "$infra_output"))
-  export TF_VAR_aws_boundary_worker_secgroup_id=$(jq .aws_secgroup_inet.value <(echo "$infra_output"))
-  export TF_VAR_aws_boundary_worker_ssh_keypair=$(jq .aws_ssh_key_boundary_infra.value <(echo "$infra_output"))
+  export TF_VAR_aws_region=$(jq -r .aws_region.value <(echo "$infra_output"))
+  export TF_VAR_aws_ami=$(jq -r .aws_ami.value <(echo "$infra_output"))
+  export TF_VAR_aws_boundary_worker_subnet_id=$(jq -r .aws_subnet_public.value <(echo "$infra_output"))
+  export TF_VAR_aws_boundary_worker_secgroup_id=$(jq -r .aws_secgroup_inet.value <(echo "$infra_output"))
+  export TF_VAR_aws_boundary_worker_ssh_keypair=$(jq -r .aws_ssh_key_boundary_infra.value <(echo "$infra_output"))
 fi
+
 if $TF_VAR_create_boundary ; then
   cd ${TF_BASE}/hcp
   if ! terraform init ; then
