@@ -6,10 +6,6 @@ terraform {
   }
 }
 
-provider "aws" {
-  region = var.aws_region
-}
-
 locals {
   vault_server_config = <<-VAULT_CONFIG
     ui = true

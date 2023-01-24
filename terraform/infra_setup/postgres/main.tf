@@ -6,10 +6,6 @@ terraform {
   }
 }
 
-provider "aws" {
-  region = var.aws_region
-}
-
 locals {
   cloudinit_config_postgres = {
     write_files = [
