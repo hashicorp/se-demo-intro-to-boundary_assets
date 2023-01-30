@@ -30,6 +30,30 @@ locals {
         permissions = "0644"
       },
       {
+        content = file("${path.module}/files/boundary_token_policy.hcl")
+        owner = "vault:vault"
+        path = "/opt/vault/boundary_token_policy.hcl"
+        permissions = "0644"
+      },
+      {
+        content = file("${path.module}/files/boundary_database_secret_policy.hcl")
+        owner = "vault:vault"
+        path = "/opt/vault/boundary_database_secret_policy.hcl"
+        permissions = "0644"
+      },
+      {
+        content = file("${path.module}/files/product_api_db_admin_role.sql")
+        owner = "vault:vault"
+        path = "/opt/vault/product_api_db_admin_role.sql"
+        permissions = "0644"
+      },
+      {
+        content = file("${path.module}/files/product_api_db_user_role.sql")
+        owner = "vault:vault"
+        path = "/opt/vault/product_api_db_user_role.sql"
+        permissions = "0644"
+      },
+      {
         content = local.vault_server_config
         owner = "root:root"
         path = "/etc/vault.d/vault-notls.hcl"
@@ -98,5 +122,7 @@ resource "aws_instance" "vault_server" {
   user_data_base64 = data.cloudinit_config.vault_server.rendered
   tags = {
     Name = "${var.unique_name}-vault-server"
+    app = "vault"
+    region = "${var.aws_region}"
   }
 }

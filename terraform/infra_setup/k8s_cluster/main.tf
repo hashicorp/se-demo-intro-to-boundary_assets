@@ -73,6 +73,8 @@ resource "aws_instance" "k8s_cluster" {
   user_data_base64 = data.cloudinit_config.k8s_cluster[0].rendered
   tags = {
     Name = "${var.unique_name}-k8s-cluster"
+    app = "kubernetes"
+    region = "${var.aws_region}"
   }
 }
 

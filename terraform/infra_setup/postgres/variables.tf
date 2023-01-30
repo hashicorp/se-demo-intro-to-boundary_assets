@@ -37,3 +37,8 @@ variable "pg_admin_user" {
   type = string
   default = "prod_api_admin"
 }
+
+variable "pg_vault_user" {
+  type = string
+  default = "vault"
+}

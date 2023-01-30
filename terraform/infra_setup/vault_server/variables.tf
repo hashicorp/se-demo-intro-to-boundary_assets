@@ -31,3 +31,11 @@ variable "vault_lb_vpc" {
 variable "vault_ssh_keypair" {
   type = string
 }
+
+variable "create_postgres" {
+  type = bool
+}
+
+variable "postgres_server" {
+  type = string
+}

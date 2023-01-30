@@ -37,12 +37,17 @@ locals {
       [ "sh", "-c", "UCF_FORCE_CONFFOLD=true apt upgrade -y" ],
       [ "apt", "install", "-y", "bind9-dnsutils", "jq", "curl", "unzip", "docker-compose" ], 
       [ "systemctl", "enable", "--now", "apt-daily-upgrade.service", "apt-daily-upgrade.timer", "docker" ],
-      [ "docker", "run", "-d", "--restart", "unless-stopped", "-p", "5432:5432", "-e", "POSTGRES_USER=${var.pg_admin_user}", "-e", "POSTGRES_PASSWORD=${random_pet.admin_password.id}", "hashicorpdemoapp/product-api-db:v0.0.22" ]
+      [ "docker", "run", "-d", "--restart", "unless-stopped", "-p", "5432:5432", "--name", "product-api-db", "-e", "POSTGRES_USER=${var.pg_admin_user}", "-e", "POSTGRES_PASSWORD=${random_pet.admin_password.id}", "-e", "POSTGRES_DB=products", "hashicorpdemoapp/product-api-db:v0.0.22" ],
+      [ "docker", "exec", "product-api-db", "psql -d products \"CREATE ROLE ${var.pg_vault_user} WITH LOGIN PASSWORD '${random_pet.vault_password.id}' ; GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${var.pg_vault_user}; GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO ${var.pg_vault_user};\"" ]
     ]
   }
 }
 
 resource "random_pet" "admin_password" {
+  length = 4
+}
+
+resource "random_pet" "vault_password" {
   length = 4
 }
 
@@ -68,5 +73,7 @@ resource "aws_instance" "postgres" {
   user_data_base64 = data.cloudinit_config.postgres[0].rendered
   tags = {
     Name = "${var.unique_name}-postgres"
+    app = "postgres"
+    region = "${var.aws_region}"
   }
 }
