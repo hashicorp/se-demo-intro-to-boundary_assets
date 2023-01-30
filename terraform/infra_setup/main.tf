@@ -78,4 +78,6 @@ module "vault_server" {
   vault_lb_vpc = module.aws_infra.aws_vpc
   create_postgres = var.create_postgres
   postgres_server = module.postgres.dns
+  pg_vault_user = module.postgres.vault_user
+  pg_vault_password = module.postgres.vault_password
 }

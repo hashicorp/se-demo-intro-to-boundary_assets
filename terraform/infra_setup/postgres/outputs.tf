@@ -9,7 +9,7 @@ output "admin_password" {
 }
 
 output "vault_user" {
-  description = "The generated user name for Vault to use for auth to manage dynamic secrets."
+  description = "The user name for Vault to use for auth to manage dynamic secrets."
   value = var.create_postgres == true ? var.pg_vault_user : ""
 }
 

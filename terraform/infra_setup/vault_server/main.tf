@@ -48,9 +48,9 @@ locals {
         permissions = "0644"
       },
       {
-        content = file("${path.module}/files/product_api_db_user_role.sql")
+        content = file("${path.module}/files/product_api_db_readonly_role.sql")
         owner = "vault:vault"
-        path = "/opt/vault/product_api_db_user_role.sql"
+        path = "/opt/vault/product_api_db_readonly_role.sql"
         permissions = "0644"
       },
       {
@@ -70,6 +70,68 @@ locals {
           VAULT_DROPIN
         owner = "root:root"
         path = "/etc/systemd/system/vault.service.d/10-notls-config.conf"
+        permissions = "0644"
+      },
+      {
+        content = <<-VAULT_INIT_UNIT
+          [Unit]
+          Description=A oneshot unit for initial Vault config
+          Requires=vault.service
+          After=vault.service
+
+          [Service]
+          EnvironmentFile=/opt/vault/vault.env
+          EnvironmentFile=-/opt/vault/postgres.env
+          User=vault
+          Group=vault
+          Type=oneshot
+          Restart=on-failure
+          RemainAfterExit=true
+          ExecStart=/opt/vault/vault-init.sh
+
+          [Install]
+          WantedBy=multi-user.target
+          VAULT_INIT_UNIT
+        owner = "root:root"
+        path = "/etc/systemd/system/vault-init.service"
+        permissions = "0644"
+      },
+      {
+        content = <<-VAULT_PG_AUTH
+          PG_USER=${var.pg_vault_user}
+          PG_PASSWORD=${var.pg_vault_password}
+          PG_HOST=${var.postgres_server}
+          VAULT_PG_AUTH
+        owner = "vault:vault"
+        path = "/etc/vault.d/postgres.env"
+        permissions = "0644"
+      },
+      {
+        content = <<-VAULT_INIT
+          #!/bin/bash
+
+          vault secrets enable -path postgres database
+
+          vault write postgres/config/product-api \
+          plugin_name=postgresql-database-plugin \
+          connection_url="postgresql://{{username}}:{{password}}@$PG_HOST/postgres?sslmode=disable" \
+          allowed_roles=readonly,admin \
+          username=$PG_USER \
+          password=$PG_PASSWORD
+
+          vault write postgres/roles/product-api-readonly \
+          db_name=product-api \
+          creation_statements=@/opt/vault/product_api_db_readonly_role.sql \
+          default_ttl=5m max_ttl=1h
+
+          vault write postgres/roles/product-api-admin \
+          db_name=product-api \
+          creation_statements=@/opt/vault/product_api_db_admin_role.sql \
+          default_ttl=1h max_ttl=6h
+
+          VAULT_INIT
+        owner = "vault:vault"
+        path = "/opt/vault/vault-init.sh"
         permissions = "0644"
       },
       {
@@ -97,7 +159,10 @@ locals {
       [ "systemctl", "enable", "--now", "apt-daily-upgrade.service", "apt-daily-upgrade.timer", "docker", "vault" ],
       [ "sh", "-c", "VAULT_ADDR=\"http://localhost:8200\" vault operator init -key-shares 1 -key-threshold 1 -format json > /root/vault-init-output.json" ],
       [ "sh", "-c", "VAULT_ADDR=\"http://localhost:8200\" vault operator unseal $(jq -r .unseal_keys_b64[0] < /root/vault-init-output.json)" ],
-      [ "sh", "-c", "echo \"export VAULT_ADDR=http://127.0.0.1:8200\" >> /root/.bash_profile; echo \"export VAULT_TOKEN=$(jq '.root_token' < /root/vault-init-output.json)\" >> /root/.bash_profile" ]
+      [ "sh", "-c", "echo \"export VAULT_ADDR=http://127.0.0.1:8200\" >> /etc/vault.d/vault.env; echo \"export VAULT_TOKEN=$(jq '.root_token' < /root/vault-init-output.json)\" >> /etc/vault.d/vault.env" ],
+      [ "sh", "-c", "echo \"\" >> /root/.bash_profile"],
+      [ "sh", "-c", "echo \"source /etc/vault.d/vault.env\" >> /root/.bash_profile"],
+      [ "sh", "-c", ""]
     ]
   }
 }

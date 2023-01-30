@@ -35,7 +35,7 @@ variable "pg_ssh_keypair" {
 
 variable "pg_admin_user" {
   type = string
-  default = "prod_api_admin"
+  default = "product_api_admin"
 }
 
 variable "pg_vault_user" {

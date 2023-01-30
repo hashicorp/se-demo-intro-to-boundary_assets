@@ -39,3 +39,11 @@ variable "create_postgres" {
 variable "postgres_server" {
   type = string
 }
+
+variable "pg_vault_user" {
+  type = string
+}
+
+variable "pg_vault_password" {
+  type = string
+}
