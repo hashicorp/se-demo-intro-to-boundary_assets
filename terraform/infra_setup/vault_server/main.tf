@@ -31,25 +31,25 @@ locals {
       },
       {
         content = file("${path.module}/files/boundary_token_policy.hcl")
-        owner = "vault:vault"
+        owner = "root:root"
         path = "/opt/vault/boundary_token_policy.hcl"
         permissions = "0644"
       },
       {
         content = file("${path.module}/files/boundary_database_secret_policy.hcl")
-        owner = "vault:vault"
+        owner = "root:root"
         path = "/opt/vault/boundary_database_secret_policy.hcl"
         permissions = "0644"
       },
       {
         content = file("${path.module}/files/product_api_db_admin_role.sql")
-        owner = "vault:vault"
+        owner = "root:root"
         path = "/opt/vault/product_api_db_admin_role.sql"
         permissions = "0644"
       },
       {
         content = file("${path.module}/files/product_api_db_readonly_role.sql")
-        owner = "vault:vault"
+        owner = "root:root"
         path = "/opt/vault/product_api_db_readonly_role.sql"
         permissions = "0644"
       },
@@ -102,7 +102,7 @@ locals {
           PG_PASSWORD=${var.pg_vault_password}
           PG_HOST=${var.postgres_server}
           VAULT_PG_AUTH
-        owner = "vault:vault"
+        owner = "root:root"
         path = "/etc/vault.d/postgres.env"
         permissions = "0644"
       },
@@ -130,9 +130,9 @@ locals {
           default_ttl=1h max_ttl=6h
 
           VAULT_INIT
-        owner = "vault:vault"
+        owner = "root:root"
         path = "/opt/vault/vault-init.sh"
-        permissions = "0644"
+        permissions = "0744"
       },
       {
         content = <<-APT_NO_PROMPT_CONFIG
