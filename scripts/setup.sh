@@ -201,6 +201,7 @@ else
   export TF_VAR_unique_name=$(jq -r .unique_name.value <(echo "$infra_output"))
   echo "export TF_VAR_unique_name=\"$TF_VAR_unique_name\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
   export TF_VAR_aws_region=$(jq -r .aws_region.value <(echo "$infra_output"))
+  echo "export TF_VAR_aws_region=\"$TF_VAR_aws_region\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
   export TF_VAR_aws_ami=$(jq -r .aws_ami.value <(echo "$infra_output"))
   export TF_VAR_aws_boundary_worker_subnet_id=$(jq -r .aws_subnet_public.value <(echo "$infra_output"))
   export TF_VAR_aws_boundary_worker_secgroup_id=$(jq -r .aws_secgroup_inet.value <(echo "$infra_output"))

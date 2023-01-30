@@ -50,6 +50,7 @@ locals {
         type = "public_instance"
         cloud = "aws"
         region = "${var.aws_region}"
+        unique_name = "${var.unique_name}"
       }
     }
     WORKER_CONFIG
@@ -130,5 +131,7 @@ resource "aws_instance" "boundary_worker" {
   user_data_base64 = data.cloudinit_config.boundary_worker.rendered
   tags = {
     Name = "${var.unique_name}-boundary-worker"
+    app = "boundary"
+    region = "${var.aws_region}"
   }
 }
