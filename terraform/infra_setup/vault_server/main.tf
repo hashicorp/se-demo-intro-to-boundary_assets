@@ -80,14 +80,14 @@ locals {
           After=vault.service
 
           [Service]
-          EnvironmentFile=/opt/vault/vault.env
-          EnvironmentFile=-/opt/vault/postgres.env
+          EnvironmentFile=/etc/vault.d/vault.env
+          EnvironmentFile=-/etc/vault.d/postgres.env
           User=vault
           Group=vault
           Type=oneshot
           Restart=on-failure
           RemainAfterExit=true
-          ExecStart=/opt/vault/vault-init.sh
+          ExecStart=/usr/local/bin/vault-init.sh
 
           [Install]
           WantedBy=multi-user.target
@@ -110,6 +110,12 @@ locals {
         content = <<-VAULT_INIT
           #!/bin/bash
 
+          if [[ -z "$PG_HOST" ]]; then
+            echo "Not setting up Postgres dynamic secrets in Vault because \
+            Postgres wasn't provisioned."
+            exit 0
+          fi
+
           vault secrets enable -path postgres database
 
           vault write postgres/config/product-api \
@@ -131,7 +137,7 @@ locals {
 
           VAULT_INIT
         owner = "root:root"
-        path = "/opt/vault/vault-init.sh"
+        path = "/usr/local/bin/vault-init.sh"
         permissions = "0744"
       },
       {
@@ -156,7 +162,7 @@ locals {
       [ "sh", "-c", "UCF_FORCE_CONFFOLD=true apt upgrade -y" ],
       [ "apt", "install", "-y", "bind9-dnsutils", "jq", "curl", "unzip", "docker-compose", "vault" ],
       [ "chown", "vault:vault", "/etc/vault.d/vault-notls.hcl" ],
-      [ "systemctl", "enable", "--now", "apt-daily-upgrade.service", "apt-daily-upgrade.timer", "docker", "vault" ],
+      [ "systemctl", "enable", "--now", "apt-daily-upgrade.service", "apt-daily-upgrade.timer", "docker", "vault-init" ],
       [ "sh", "-c", "VAULT_ADDR=\"http://localhost:8200\" vault operator init -key-shares 1 -key-threshold 1 -format json > /root/vault-init-output.json" ],
       [ "sh", "-c", "VAULT_ADDR=\"http://localhost:8200\" vault operator unseal $(jq -r .unseal_keys_b64[0] < /root/vault-init-output.json)" ],
       [ "sh", "-c", "echo \"export VAULT_ADDR=http://127.0.0.1:8200\" >> /etc/vault.d/vault.env; echo \"export VAULT_TOKEN=$(jq '.root_token' < /root/vault-init-output.json)\" >> /etc/vault.d/vault.env" ],
