@@ -161,13 +161,14 @@ locals {
       [ "apt", "update" ],
       [ "sh", "-c", "UCF_FORCE_CONFFOLD=true apt upgrade -y" ],
       [ "apt", "install", "-y", "bind9-dnsutils", "jq", "curl", "unzip", "docker-compose", "vault" ],
-      [ "chown", "vault:vault", "/etc/vault.d/vault-notls.hcl" ],
+      [ "chown", "vault:vault", "/usr/local/bin/vault-init.sh" ],
       [ "systemctl", "enable", "--now", "apt-daily-upgrade.service", "apt-daily-upgrade.timer", "docker", "vault-init" ],
       [ "sh", "-c", "VAULT_ADDR=\"http://localhost:8200\" vault operator init -key-shares 1 -key-threshold 1 -format json > /root/vault-init-output.json" ],
       [ "sh", "-c", "VAULT_ADDR=\"http://localhost:8200\" vault operator unseal $(jq -r .unseal_keys_b64[0] < /root/vault-init-output.json)" ],
       [ "sh", "-c", "echo \"VAULT_ADDR=http://127.0.0.1:8200\" >> /etc/vault.d/vault.env; echo \"VAULT_TOKEN=$(jq '.root_token' < /root/vault-init-output.json)\" >> /etc/vault.d/vault.env" ],
       [ "sh", "-c", "echo \"\" >> /root/.bash_profile"],
-      [ "sh", "-c", "echo \"source /etc/vault.d/vault.env\" >> /root/.bash_profile"]
+      [ "sh", "-c", "echo \"source /etc/vault.d/vault.env\" >> /root/.bash_profile"],
+      [ "sh", "-c", "echo \"export VAULT_ADDR VAULT_TOKEN\" >> /root/.bash_profile"]
     ]
   }
 }
