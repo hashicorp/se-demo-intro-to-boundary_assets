@@ -39,7 +39,7 @@ locals {
       [ "systemctl", "enable", "--now", "apt-daily-upgrade.service", "apt-daily-upgrade.timer", "docker" ],
       [ "docker", "run", "-d", "--restart", "unless-stopped", "-p", "5432:5432", "--name", "product-api-db", "-e", "POSTGRES_USER=${var.pg_admin_user}", "-e", "POSTGRES_PASSWORD=${random_pet.admin_password.id}", "-e", "POSTGRES_DB=products", "hashicorpdemoapp/product-api-db:v0.0.22" ],
       [ "sleep", "10" ],
-      [ "docker", "exec", "product-api-db", "bash", "-c", "psql -U ${var.pg_admin_user} -d products -c \"CREATE ROLE ${var.pg_vault_user} WITH SUPERUSER LOGIN PASSWORD '${random_pet.vault_password.id}';\"" ]
+      [ "docker", "exec", "product-api-db", "bash", "-c", "psql -U ${var.pg_admin_user} -d products -c \"CREATE ROLE ${var.pg_vault_user} WITH SUPERUSER LOGIN PASSWORD '${random_pet.vault_password.id}'; REVOKE CREATE ON SCHEMA public FROM PUBLIC;\"" ]
     ]
   }
 }

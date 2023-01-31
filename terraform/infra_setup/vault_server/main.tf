@@ -121,7 +121,7 @@ locals {
           vault write postgres/config/product-api \
           plugin_name=postgresql-database-plugin \
           connection_url="postgresql://{{username}}:{{password}}@$PG_HOST/postgres?sslmode=disable" \
-          allowed_roles=readonly,admin \
+          allowed_roles=product-api-readonly,product-api-admin \
           username=$PG_USER \
           password=$PG_PASSWORD
 
@@ -165,7 +165,7 @@ locals {
       [ "systemctl", "enable", "--now", "apt-daily-upgrade.service", "apt-daily-upgrade.timer", "docker", "vault-init" ],
       [ "sh", "-c", "VAULT_ADDR=\"http://localhost:8200\" vault operator init -key-shares 1 -key-threshold 1 -format json > /root/vault-init-output.json" ],
       [ "sh", "-c", "VAULT_ADDR=\"http://localhost:8200\" vault operator unseal $(jq -r .unseal_keys_b64[0] < /root/vault-init-output.json)" ],
-      [ "sh", "-c", "echo \"export VAULT_ADDR=http://127.0.0.1:8200\" >> /etc/vault.d/vault.env; echo \"export VAULT_TOKEN=$(jq '.root_token' < /root/vault-init-output.json)\" >> /etc/vault.d/vault.env" ],
+      [ "sh", "-c", "echo \"VAULT_ADDR=http://127.0.0.1:8200\" >> /etc/vault.d/vault.env; echo \"VAULT_TOKEN=$(jq '.root_token' < /root/vault-init-output.json)\" >> /etc/vault.d/vault.env" ],
       [ "sh", "-c", "echo \"\" >> /root/.bash_profile"],
       [ "sh", "-c", "echo \"source /etc/vault.d/vault.env\" >> /root/.bash_profile"]
     ]
