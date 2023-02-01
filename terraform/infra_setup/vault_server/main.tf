@@ -10,7 +10,7 @@ locals {
   vault_server_config = <<-VAULT_CONFIG
     ui = true
 
-    mlock = true
+    disable_mlock = false
 
     storage "file" {
       path = "/opt/vault/data"
@@ -21,6 +21,97 @@ locals {
       tls_disable = 1
     }
     VAULT_CONFIG
+  vault_dropin = <<- VAULT_DROPIN
+    [Unit]
+    ConditionFileNotEmpty=/etc/vault.d/vault-notls.hcl
+
+    [Service]
+    ExecStart=
+    ExecStart=/usr/bin/vault server -config=/etc/vault.d/vault-notls.hcl
+    VAULT_DROPIN
+  vault_init = <<- VAULT_INIT
+    #!/bin/bash
+
+    export VAULT_ADDR="http://localhost:8200"
+
+    VAULT_INIT_OUTPUT=$(vault operator init -key-shares 1 -key-threshold 1 -format json)
+
+    vault operator unseal $(echo $VAULT_INIT_OUTPUT | jq -r '.unseal_keys_b64[0]')
+
+    echo "VAULT_ADDR=http://127.0.0.1:8200" > /etc/vault.d/vault.env
+
+    echo "VAULT_TOKEN=$(echo $VAULT_INIT_OUTPUT | jq '.root_token')" >> /etc/vault.d/vault.env
+    VAULT_INIT
+  vault_pg_auth = <<- VAULT_PG_AUTH
+    PG_USER=${var.pg_vault_user}
+    PG_PASSWORD=${var.pg_vault_password}
+    PG_HOST=${var.postgres_server}
+    VAULT_PG_AUTH
+  vault_init_postgres = <<- VAULT_INIT_POSTGRES
+    #!/bin/bash
+
+    if [[ -z "$PG_HOST" ]]; then
+      echo "Not setting up Postgres dynamic secrets in Vault because \
+      Postgres wasn't provisioned."
+      exit 0
+    fi
+
+    vault secrets enable -path postgres database
+
+    vault write postgres/config/product-api \
+    plugin_name=postgresql-database-plugin \
+    connection_url="postgresql://{{username}}:{{password}}@$PG_HOST/products?sslmode=disable" \
+    allowed_roles=product-api-readonly,product-api-admin \
+    username=$PG_USER \
+    password=$PG_PASSWORD
+
+    vault write postgres/roles/product-api-readonly \
+    db_name=product-api \
+    creation_statements=@/opt/vault/product_api_db_readonly_role.sql \
+    default_ttl=5m max_ttl=1h
+
+    vault write postgres/roles/product-api-admin \
+    db_name=product-api \
+    creation_statements=@/opt/vault/product_api_db_admin_role.sql \
+    default_ttl=1h max_ttl=6h
+    VAULT_INIT_POSTGRES
+  vault_init_unit = <<- VAULT_INIT_UNIT
+    [Unit]
+    Description=A oneshot unit for initial Vault config
+    Requires=vault.service
+    After=vault.service
+
+    [Service]
+    EnvironmentFile=/etc/vault.d/vault.env
+    EnvironmentFile=-/etc/vault.d/postgres.env
+    User=vault
+    Group=vault
+    Type=oneshot
+    Restart=on-failure
+    RemainAfterExit=true
+    ExecStart=/usr/local/bin/vault-init.sh
+
+    [Install]
+    WantedBy=multi-user.target
+    VAULT_INIT_UNIT
+  vault_init_postgres_unit = <<- VAULT_INIT_POSTGRES_UNIT
+    [Unit]
+    Description=A oneshot unit for Vault Postgres dynamic secret config
+    Requires=vault-init.service
+    After=vault-init.service
+
+    [Service]
+    EnvironmentFile=/etc/vault.d/postgres.env
+    User=vault
+    Group=vault
+    Type=oneshot
+    Restart=on-failure
+    RemainAfterExit=true
+    ExecStart=/usr/local/bin/vault-init-postgres.sh
+
+    [Install]
+    WantedBy=multi-user.target
+    VAULT_INIT_POSTGRES_UNIT
   cloudinit_config_vault_server = {
     write_files = [
       {
@@ -60,85 +151,40 @@ locals {
         permissions = "0400"
       },
       {
-        content = <<-VAULT_DROPIN
-          [Unit]
-          ConditionFileNotEmpty=/etc/vault.d/vault-notls.hcl
-
-          [Service]
-          ExecStart=
-          ExecStart=/usr/bin/vault server -config=/etc/vault.d/vault-notls.hcl
-          VAULT_DROPIN
+        content = local.vault_dropin
         owner = "root:root"
         path = "/etc/systemd/system/vault.service.d/10-notls-config.conf"
         permissions = "0644"
       },
       {
-        content = <<-VAULT_INIT_UNIT
-          [Unit]
-          Description=A oneshot unit for initial Vault config
-          Requires=vault.service
-          After=vault.service
-
-          [Service]
-          EnvironmentFile=/etc/vault.d/vault.env
-          EnvironmentFile=-/etc/vault.d/postgres.env
-          User=vault
-          Group=vault
-          Type=oneshot
-          Restart=on-failure
-          RemainAfterExit=true
-          ExecStart=/usr/local/bin/vault-init.sh
-
-          [Install]
-          WantedBy=multi-user.target
-          VAULT_INIT_UNIT
+        content = local.vault_init
         owner = "root:root"
-        path = "/etc/systemd/system/vault-init.service"
-        permissions = "0644"
+        path = "/usr/local/bin/vault-init.sh"
+        permissions = "0744"
       },
       {
-        content = <<-VAULT_PG_AUTH
-          PG_USER=${var.pg_vault_user}
-          PG_PASSWORD=${var.pg_vault_password}
-          PG_HOST=${var.postgres_server}
-          VAULT_PG_AUTH
+        content = local.vault_pg_auth
         owner = "root:root"
         path = "/etc/vault.d/postgres.env"
         permissions = "0644"
       },
       {
-        content = <<-VAULT_INIT
-          #!/bin/bash
-
-          if [[ -z "$PG_HOST" ]]; then
-            echo "Not setting up Postgres dynamic secrets in Vault because \
-            Postgres wasn't provisioned."
-            exit 0
-          fi
-
-          vault secrets enable -path postgres database
-
-          vault write postgres/config/product-api \
-          plugin_name=postgresql-database-plugin \
-          connection_url="postgresql://{{username}}:{{password}}@$PG_HOST/postgres?sslmode=disable" \
-          allowed_roles=product-api-readonly,product-api-admin \
-          username=$PG_USER \
-          password=$PG_PASSWORD
-
-          vault write postgres/roles/product-api-readonly \
-          db_name=product-api \
-          creation_statements=@/opt/vault/product_api_db_readonly_role.sql \
-          default_ttl=5m max_ttl=1h
-
-          vault write postgres/roles/product-api-admin \
-          db_name=product-api \
-          creation_statements=@/opt/vault/product_api_db_admin_role.sql \
-          default_ttl=1h max_ttl=6h
-
-          VAULT_INIT
+        content = local.vault_init_postgres
         owner = "root:root"
-        path = "/usr/local/bin/vault-init.sh"
+        path = "/usr/local/bin/vault-init-postgres.sh"
         permissions = "0744"
+      },
+      {
+        content = local.vault_init_unit
+        owner = "root:root"
+        path = "/etc/systemd/system/vault-init.service"
+        permissions = "0644"
+      },
+      {
+        content = local.vault_init_postgres_unit
+        owner = "root:root"
+        path = "/etc/systemd/system/vault-init-postgres.service"
+        permissions = "0644"
       },
       {
         content = <<-APT_NO_PROMPT_CONFIG
@@ -161,11 +207,8 @@ locals {
       [ "apt", "update" ],
       [ "sh", "-c", "UCF_FORCE_CONFFOLD=true apt upgrade -y" ],
       [ "apt", "install", "-y", "bind9-dnsutils", "jq", "curl", "unzip", "docker-compose", "vault" ],
-      [ "chown", "vault:vault", "/usr/local/bin/vault-init.sh" ],
-      [ "systemctl", "enable", "--now", "apt-daily-upgrade.service", "apt-daily-upgrade.timer", "docker", "vault-init" ],
-      [ "sh", "-c", "VAULT_ADDR=\"http://localhost:8200\" vault operator init -key-shares 1 -key-threshold 1 -format json > /root/vault-init-output.json" ],
-      [ "sh", "-c", "VAULT_ADDR=\"http://localhost:8200\" vault operator unseal $(jq -r .unseal_keys_b64[0] < /root/vault-init-output.json)" ],
-      [ "sh", "-c", "echo \"VAULT_ADDR=http://127.0.0.1:8200\" >> /etc/vault.d/vault.env; echo \"VAULT_TOKEN=$(jq '.root_token' < /root/vault-init-output.json)\" >> /etc/vault.d/vault.env" ],
+      [ "chown", "vault:vault", "/usr/local/bin/vault-*.sh" ],
+      [ "systemctl", "enable", "--now", "apt-daily-upgrade.service", "apt-daily-upgrade.timer", "docker", "vault", "vault-init", "vault-init-postgres" ],
       [ "sh", "-c", "echo \"\" >> /root/.bash_profile"],
       [ "sh", "-c", "echo \"source /etc/vault.d/vault.env\" >> /root/.bash_profile"],
       [ "sh", "-c", "echo \"export VAULT_ADDR VAULT_TOKEN\" >> /root/.bash_profile"]
