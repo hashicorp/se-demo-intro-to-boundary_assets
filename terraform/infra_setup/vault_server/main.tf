@@ -65,6 +65,8 @@ locals {
     username=$PG_USER \
     password=$PG_PASSWORD
 
+    vault write -force postgres/rotate-root/product-api
+
     vault write postgres/roles/product-api-readonly \
     db_name=product-api \
     creation_statements=@/opt/vault/product_api_db_readonly_role.sql \
