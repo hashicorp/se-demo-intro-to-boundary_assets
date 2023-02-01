@@ -21,7 +21,7 @@ locals {
       tls_disable = 1
     }
     VAULT_CONFIG
-  vault_dropin = <<- VAULT_DROPIN
+  vault_dropin = <<-VAULT_DROPIN
     [Unit]
     ConditionFileNotEmpty=/etc/vault.d/vault-notls.hcl
 
@@ -29,7 +29,7 @@ locals {
     ExecStart=
     ExecStart=/usr/bin/vault server -config=/etc/vault.d/vault-notls.hcl
     VAULT_DROPIN
-  vault_init = <<- VAULT_INIT
+  vault_init = <<-VAULT_INIT
     #!/bin/bash
 
     export VAULT_ADDR="http://localhost:8200"
@@ -42,12 +42,12 @@ locals {
 
     echo "VAULT_TOKEN=$(echo $VAULT_INIT_OUTPUT | jq '.root_token')" >> /etc/vault.d/vault.env
     VAULT_INIT
-  vault_pg_auth = <<- VAULT_PG_AUTH
+  vault_pg_auth = <<-VAULT_PG_AUTH
     PG_USER=${var.pg_vault_user}
     PG_PASSWORD=${var.pg_vault_password}
     PG_HOST=${var.postgres_server}
     VAULT_PG_AUTH
-  vault_init_postgres = <<- VAULT_INIT_POSTGRES
+  vault_init_postgres = <<-VAULT_INIT_POSTGRES
     #!/bin/bash
 
     if [[ -z "$PG_HOST" ]]; then
@@ -77,7 +77,7 @@ locals {
     creation_statements=@/opt/vault/product_api_db_admin_role.sql \
     default_ttl=1h max_ttl=6h
     VAULT_INIT_POSTGRES
-  vault_init_unit = <<- VAULT_INIT_UNIT
+  vault_init_unit = <<-VAULT_INIT_UNIT
     [Unit]
     Description=A oneshot unit for initial Vault config
     Requires=vault.service
@@ -96,7 +96,7 @@ locals {
     [Install]
     WantedBy=multi-user.target
     VAULT_INIT_UNIT
-  vault_init_postgres_unit = <<- VAULT_INIT_POSTGRES_UNIT
+  vault_init_postgres_unit = <<-VAULT_INIT_POSTGRES_UNIT
     [Unit]
     Description=A oneshot unit for Vault Postgres dynamic secret config
     Requires=vault-init.service
@@ -117,7 +117,7 @@ locals {
   cloudinit_config_vault_server = {
     write_files = [
       {
-        content = file("${path.root}/gpg_pubkeys/hashicorp-archive-keyring.gpg")
+        content = file("${path.root}/files/gpg_pubkeys/hashicorp-archive-keyring.gpg")
         owner = "root:root"
         path = "/tmp/hashicorp-archive-keyring.gpg"
         permissions = "0644"

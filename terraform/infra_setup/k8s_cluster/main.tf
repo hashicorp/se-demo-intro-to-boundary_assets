@@ -10,13 +10,13 @@ locals {
   cloudinit_config_k8s_cluster = {
     write_files = [
       {
-        content = file("${path.root}/gpg_pubkeys/hashicorp-archive-keyring.gpg")
+        content = file("${path.root}/files/gpg_pubkeys/hashicorp-archive-keyring.gpg")
         owner = "root:root"
         path = "/tmp/hashicorp-archive-keyring.gpg"
         permissions = "0644"
       },
       {
-        content = file("${path.root}/gpg_pubkeys/kubernetes-archive-keyring.gpg")
+        content = file("${path.root}/files/gpg_pubkeys/kubernetes-archive-keyring.gpg")
         owner = "root:root"
         path = "/tmp/kubernetes-archive-keyring.gpg"
         permissions = "0644"
