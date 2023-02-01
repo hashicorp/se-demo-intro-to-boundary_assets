@@ -59,12 +59,12 @@ resource "aws_subnet" "boundary_demo_public" {
 
 resource "aws_key_pair" "app_infra" {
   key_name = "${var.unique_name}-app-infra"
-  public_key = file("${path.root}/files/app_infra.pub")
+  public_key = file("${path.root}/gen_files/app_infra.pub")
 }
 
 resource "aws_key_pair" "boundary_infra" {
   key_name = "${var.unique_name}-boundary-infra"
-  public_key = file("${path.root}/files/boundary_infra.pub")
+  public_key = file("${path.root}/gen_files/boundary_infra.pub")
 }
 
 resource "aws_security_group" "boundary_demo_public" {

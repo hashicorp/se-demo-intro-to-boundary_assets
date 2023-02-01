@@ -45,10 +45,10 @@ output "aws_ssh_keypair_boundary_infra" {
 
 output "app_infra_ssh_privkey" {
   description = "The raw content of the app infrastructure SSH private key."
-  value = file("${path.root}/files/app_infra")
+  value = file("${path.root}/gen_files/app_infra")
 }
 
 output "boundary_infra_ssh_privkey" {
   description = "The raw content of the Boundary worker SSH private key."
-  value = file("${path.root}/files/boundary_infra")
+  value = file("${path.root}/gen_files/boundary_infra")
 }
