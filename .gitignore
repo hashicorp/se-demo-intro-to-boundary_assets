@@ -32,6 +32,4 @@ override.tf.json
 # example: *tfplan*
 
 # Include files in this project generated during the TF run.
-terraform/infra_setup/files/*
-terraform/hcp/files/*
-terraform/demo_setup/files/*
+**/gen_files/*
