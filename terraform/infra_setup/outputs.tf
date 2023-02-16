@@ -18,11 +18,6 @@ output "aws_ssh_key_app_infra" {
   value = module.aws_infra.aws_ssh_keypair_app_infra
 }
 
-output "aws_ssh_key_boundary_infra" {
-  description = "The Boundary worker SSH keypair name."
-  value = module.aws_infra.aws_ssh_keypair_boundary_infra
-}
-
 output "aws_subnet_public" {
   description = "The AWS VPC public subnet ID."
   value = module.aws_infra.aws_subnet_public_id
