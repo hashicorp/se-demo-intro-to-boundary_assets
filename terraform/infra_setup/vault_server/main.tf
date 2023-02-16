@@ -89,7 +89,6 @@ locals {
 
     [Service]
     EnvironmentFile=/etc/vault.d/vault.env
-    EnvironmentFile=-/etc/vault.d/postgres.env
     User=vault
     Group=vault
     Type=oneshot
@@ -107,7 +106,8 @@ locals {
     After=vault-init.service
 
     [Service]
-    EnvironmentFile=/etc/vault.d/postgres.env
+    EnvironmentFile=/etc/vault.d/vault.env
+    EnvironmentFile=-/etc/vault.d/postgres.env
     User=vault
     Group=vault
     Type=oneshot
@@ -213,7 +213,7 @@ locals {
       [ "apt", "update" ],
       [ "sh", "-c", "UCF_FORCE_CONFFOLD=true apt upgrade -y" ],
       [ "apt", "install", "-y", "bind9-dnsutils", "jq", "curl", "unzip", "docker-compose", "vault" ],
-      [ "chown", "vault:vault", "/usr/local/bin/vault-*.sh" ],
+      [ "sh", "-c", "chown vault:vault /usr/local/bin/vault-*.sh" ],
       [ "systemctl", "enable", "--now", "apt-daily-upgrade.service", "apt-daily-upgrade.timer", "docker", "vault", "vault-init", "vault-init-postgres" ],
       [ "sh", "-c", "echo \"\" >> /root/.bash_profile"],
       [ "sh", "-c", "echo \"source /etc/vault.d/vault.env\" >> /root/.bash_profile"],
