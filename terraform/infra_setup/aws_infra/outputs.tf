@@ -38,17 +38,7 @@ output "aws_ssh_keypair_app_infra" {
   value = aws_key_pair.app_infra.key_name
 }
 
-output "aws_ssh_keypair_boundary_infra" {
-  description = "The name of the Boundary worker AWS SSH keypair."
-  value = aws_key_pair.boundary_infra.key_name
-}
-
 output "app_infra_ssh_privkey" {
   description = "The raw content of the app infrastructure SSH private key."
   value = file("${path.root}/gen_files/ssh_keys/app_infra")
-}
-
-output "boundary_infra_ssh_privkey" {
-  description = "The raw content of the Boundary worker SSH private key."
-  value = file("${path.root}/gen_files/ssh_keys/boundary_infra")
 }

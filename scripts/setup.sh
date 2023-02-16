@@ -14,8 +14,13 @@ TF_BASE="$(realpath $(dirname $0)/../terraform)"
 echo "export TF_BASE=\"$TF_BASE\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
 
 mkdir -p ${TF_BASE}/{infra_setup,demo_setup}/gen_files/ssh_keys
-ssh-keygen -f ${TF_BASE}/infra_setup/gen_files/ssh_keys/app_infra -N ""
-ssh-keygen -f ${TF_BASE}/infra_setup/gen_files/ssh_keys/boundary_infra -N ""
+if ! [ -f ${TF_BASE}/infra_setup/gen_files/ssh_keys/app_infra ]; then
+  ssh-keygen -f ${TF_BASE}/infra_setup/gen_files/ssh_keys/app_infra -N ""
+fi
+
+if ! [ -f ${TF_BASE}/infra_setup/gen_files/ssh_keys/boundary_infra ]; then
+  ssh-keygen -f ${TF_BASE}/infra_setup/gen_files/ssh_keys/boundary_infra -N ""
+fi
 
 TF_VAR_create_postgres=true
 TF_VAR_create_k8s=true

@@ -120,13 +120,18 @@ data "cloudinit_config" "boundary_worker" {
   }
 }
 
+resource "aws_key_pair" "boundary_infra" {
+  key_name = "${var.unique_name}-boundary-infra"
+  public_key = file("${path.root}/gen_files/ssh_keys/boundary_infra.pub")
+}
+
 resource "aws_instance" "boundary_worker" {
   associate_public_ip_address = true
   ami = var.aws_ami
   subnet_id = var.aws_boundary_worker_subnet_id
   instance_type = var.aws_boundary_worker_instance_type
   vpc_security_group_ids = [ var.aws_boundary_worker_secgroup_id ]
-  key_name = var.aws_boundary_worker_ssh_keypair
+  key_name = aws_key_pair.boundary_infra.key_name
   user_data_replace_on_change = true
   user_data_base64 = data.cloudinit_config.boundary_worker.rendered
   tags = {

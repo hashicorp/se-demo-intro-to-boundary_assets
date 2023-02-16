@@ -62,11 +62,6 @@ resource "aws_key_pair" "app_infra" {
   public_key = file("${path.root}/gen_files/ssh_keys/app_infra.pub")
 }
 
-resource "aws_key_pair" "boundary_infra" {
-  key_name = "${var.unique_name}-boundary-infra"
-  public_key = file("${path.root}/gen_files/ssh_keys/boundary_infra.pub")
-}
-
 resource "aws_security_group" "boundary_demo_public" {
   name = "${var.unique_name}-public"
   vpc_id = aws_vpc.boundary_demo.id
