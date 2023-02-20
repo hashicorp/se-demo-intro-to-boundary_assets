@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 output "admin_user" {
   description = "The admin username of the Postgres server."
   value = var.create_postgres == true ? var.pg_admin_user : ""
