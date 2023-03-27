@@ -142,6 +142,7 @@ while [ $boundary_cluster_info_success != "true" ]; do
       boundary_cluster_info_success="true"
       echo ""
       echo "Boundary cluster will be created with the supplied HCP credentials."
+      echo ""
       echo "export HCP_CLIENT_ID=\"$hcp_user_client_id\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
       echo "export HCP_CLIENT_SECRET=\"$hcp_user_client_secret\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
     fi
