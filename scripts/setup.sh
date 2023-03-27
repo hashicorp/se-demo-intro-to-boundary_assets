@@ -63,11 +63,11 @@ instance.  If you don't want that, enter \"No\" or \"N\" here.  Otherwise
 enter \"Yes\" or \"Y\" or just press Enter."
 boundary_cluster_info_text=\
 "If you want a Boundary cluster created for you, you only need to enter 
-HCP service principal credentials, and the Boundary cluster questions 
-will be skipped.  If you already have a Boundary cluster, press Enter to 
-skip each of the HCP service principal questions and enter your Boundary 
-cluster's URL, auth method ID, admin login name, and admin password where 
-prompted."
+HCP service principal credentials, and the Boundary cluster login 
+questions will be skipped.  If you already have a Boundary cluster, 
+answer 'no' when asked if you want it created to skip each of the HCP 
+service principal questions and enter your Boundary cluster's URL, auth 
+method ID, admin login name, and admin password where prompted."
 admin_ip_info_text=\
 "By default the public-facing resources created in this demo are access-
 restricted to the external IP of the Instruqt workstation VM.  If you 
@@ -96,14 +96,18 @@ while [ $boundary_cluster_info_success != "true" ]; do
     echo "This script can create the HCP Boundary cluster for you.  Note that "
     echo "if it already exists, this script will fail and you will need to "
     echo "re-run it with the login info for your existing cluster."
-    read -p "Create Boundary cluster in HCP? " create_boundary_amswer
+    read -p "Create Boundary cluster in HCP? " create_boundary_answer
     if ! echo $create_boundary_answer | grep -E -i '^n$|^no$' > /dev/null; then
       create_boundary=true
       if [ -z "$HCP_CLIENT_ID" ]; then
         read -p "HCP service principal client ID: " hcp_user_client_id
+      else
+        hcp_user_client_id=$HCP_CLIENT_ID
       fi
       if [ -z "$HCP_CLIENT_SECRET" ]; then
         read -sp "HCP service principal client secret: " hcp_user_client_secret
+      else
+        hcp_user_client_secret=$HCP_CLIENT_SECRET
       fi
       echo ""
     else
