@@ -96,8 +96,8 @@ while [ $boundary_cluster_info_success != "true" ]; do
     echo "This script can create the HCP Boundary cluster for you.  Note that "
     echo "if it already exists, this script will fail and you will need to "
     echo "re-run it with the login info for your existing cluster."
-    read -p "Create Boundary cluster in HCP?" create_boundary_amswer
-    if ! echo $defaults_answer | grep -E -i '^n$|^no$' > /dev/null; then
+    read -p "Create Boundary cluster in HCP? " create_boundary_amswer
+    if ! echo $create_boundary_answer | grep -E -i '^n$|^no$' > /dev/null; then
       create_boundary=true
       if [ -z "$HCP_CLIENT_ID" ]; then
         read -p "HCP service principal client ID: " hcp_user_client_id
