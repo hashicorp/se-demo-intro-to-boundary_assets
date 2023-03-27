@@ -1,6 +1,5 @@
 variable "unique_name" {
   type = string
-  default = ""
 }
 
 variable "aws_region" {
@@ -31,10 +30,6 @@ variable "aws_k8s_node_instance_type" {
 variable "aws_postgres_node_instance_type" {
   type = string
   default = "t3.medium"
-}
-
-variable "app_infra_ssh_privkey" {
-  type = string
 }
 
 variable "create_postgres" {

@@ -17,14 +17,6 @@ provider "boundary" {
   addr = var.boundary_cluster_admin_url
 }
 
-resource "random_pet" "unique_name" {
-}
-
-resource "random_integer" "unique_name" {
-  min = 1000000
-  max = 1999999
-}
-
 data "http" "admin_ip_dyn" {
   url = "http://whatismyip.akamai.com/"
 }
@@ -32,12 +24,11 @@ data "http" "admin_ip_dyn" {
 locals {
   admin_ip_result = "${data.http.admin_ip_dyn.response_body}/32"
   aws_instance_types = [ var.aws_k8s_node_instance_type, var.aws_postgres_node_instance_type, var.aws_vault_node_instance_type ]
-  unique_name = coalesce(var.unique_name, "${random_pet.unique_name.id}-${substr(random_integer.unique_name.result, -6, -1)}")
 }
 
 module "aws_infra" {
   source = "./aws_infra"
-  unique_name = local.unique_name
+  unique_name = var.unique_name
   admin_ip = local.admin_ip_result
   admin_ip_additional = var.admin_ip_additional
   aws_region = var.aws_region
@@ -48,7 +39,7 @@ module "aws_infra" {
 module "boundary_setup" {
   depends_on = [ module.aws_infra ]
   source = "./boundary_setup"
-  unique_name = local.unique_name
+  unique_name = var.unique_name
   aws_region = var.aws_region
   aws_vpc = module.aws_infra.aws_vpc
   aws_ami = module.aws_infra.aws_ami_ubuntu
@@ -62,7 +53,7 @@ module "boundary_setup" {
 module "postgres" {
   depends_on = [ module.aws_infra ]
   source = "./postgres"
-  unique_name = local.unique_name
+  unique_name = var.unique_name
   aws_region = var.aws_region
   aws_ami = module.aws_infra.aws_ami_ubuntu
   pg_instance_type = var.aws_postgres_node_instance_type
@@ -74,7 +65,7 @@ module "postgres" {
 module "k8s_cluster" {
   depends_on = [ module.aws_infra, module.boundary_setup ]
   source = "./k8s_cluster"
-  unique_name = local.unique_name
+  unique_name = var.unique_name
   aws_region = var.aws_region
   aws_vpc = module.aws_infra.aws_vpc
   aws_ami = module.aws_infra.aws_ami_ubuntu
@@ -92,7 +83,7 @@ module "k8s_cluster" {
 module "vault_server" {
   depends_on = [ module.postgres, module.k8s_cluster ]
   source = "./vault_server"
-  unique_name = local.unique_name
+  unique_name = var.unique_name
   aws_region = var.aws_region
   aws_ami = module.aws_infra.aws_ami_ubuntu
   vault_instance_type = var.aws_vault_node_instance_type

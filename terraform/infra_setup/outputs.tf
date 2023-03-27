@@ -1,8 +1,3 @@
-output "unique_name" {
-  description = "The unique name used to create resources in this workspace."
-  value = local.unique_name
-}
-
 output "aws_region" {
   description = "The AWS region."
   value = var.aws_region
@@ -41,6 +36,11 @@ output "aws_secgroup_private" {
 output "postgres_server" {
   description = "The Postgres server hostname and IP created (if any)."
   value = jsonencode({"hostname"="${module.postgres.dns}","private_ip" = "${module.postgres.ip_private}"})
+}
+
+output "postgres_k8s_admin_password" {
+  description = "The Kubernetes postgres server admin password (if any)."
+  value = module.k8s_cluster.postgres_k8s_admin_password
 }
 
 output "k8s_cluster_api" {

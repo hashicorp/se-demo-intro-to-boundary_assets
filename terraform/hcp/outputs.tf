@@ -1,3 +1,8 @@
+output "unique_name" {
+  description = "The unique name used to create resources in this workspace."
+  value = local.unique_name
+}
+
 output "boundary_cluster_admin_url" {
   description = "The admin URL of the created Boundary cluster."
   value = local.boundary_cluster_admin_url

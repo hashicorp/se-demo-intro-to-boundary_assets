@@ -219,6 +219,7 @@ if $TF_VAR_create_boundary ; then
     hcp_output="$(terraform output -json)"
     echo "$hcp_output" > ${TF_BASE}/hcp_output.json
     TF_VAR_boundary_cluster_admin_url=$(jq .boundary_cluster_admin_url.value <(echo "$hcp_output"))
+    TF_VAR_unique_name=$(jq .unique_name.value <(echo "$hcp_output"))
     boundary_admin_auth_method=$(jq .boundary_cluster_admin_auth_method.value <(echo "$hcp_output"))
     boundary_admin_login=$(jq .boundary_cluster_admin_login.value <(echo "$hcp_output"))
     boundary_admin_password=$(jq .boundary_cluster_admin_password.value <(echo "$hcp_output"))

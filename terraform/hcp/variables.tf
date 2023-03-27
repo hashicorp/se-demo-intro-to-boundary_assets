@@ -1,10 +1,11 @@
+variable "unique_name" {
+  type = string
+  default = ""
+}
+
 variable "create_boundary" {
   type = bool
   default = true
-}
-
-variable "unique_name" {
-  type = string
 }
 
 variable "boundary_admin_login" {
