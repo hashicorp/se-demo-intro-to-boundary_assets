@@ -52,10 +52,11 @@ module "boundary_setup" {
   aws_region = var.aws_region
   aws_vpc = module.aws_infra.aws_vpc
   aws_ami = module.aws_infra.aws_ami_ubuntu
+  aws_public_secgroup_id = module.aws_infra.aws_secgroup_public_id
+  app_infra_ssh_privkey = module.aws_infra.app_infra_ssh_privkey
   boundary_worker_instance_type = var.aws_boundary_worker_instance_type
   boundary_worker_subnet_id = module.aws_infra.aws_subnet_public_id
   boundary_cluster_admin_url = var.boundary_cluster_admin_url
-  aws_public_secgroup_id = module.aws_infra.aws_secgroup_public_id
 }
 
 module "postgres" {

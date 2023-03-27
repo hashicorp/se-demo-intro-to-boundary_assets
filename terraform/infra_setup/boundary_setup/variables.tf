@@ -18,6 +18,10 @@ variable "aws_public_secgroup_id" {
   type = string
 }
 
+variable "app_infra_ssh_privkey" {
+  type = string
+}
+
 variable "boundary_worker_subnet_id" {
   type = string
 }

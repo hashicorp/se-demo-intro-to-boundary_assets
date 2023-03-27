@@ -82,6 +82,12 @@ locals {
         permissions = "0644"
       },
       {
+        content = var.app_infra_ssh_privkey
+        owner = "ubuntu:ubuntu"
+        path = "/home/ubuntu/.ssh/app_infra"
+        permissions = "0600"
+      },
+      {
         content = <<-APT_NO_PROMPT_CONFIG
           Dpkg::Options {
             "--force-confdef";

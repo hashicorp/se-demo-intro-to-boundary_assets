@@ -14,7 +14,7 @@ output "vault_user" {
 }
 
 output "vault_password" {
-  description = "The generated admin password of the Postgres server."
+  description = "The password for Vault to use for auth to manage dynamic secrets."
   value = var.create_postgres == true ? random_pet.vault_password.id : ""
 }
 

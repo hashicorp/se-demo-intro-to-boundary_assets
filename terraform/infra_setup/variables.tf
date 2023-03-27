@@ -15,22 +15,26 @@ variable "aws_vpc_cidr" {
 
 variable "aws_boundary_worker_instance_type" {
   type = string
-  default = "t3.small"
+  default = "t3.medium"
 }
 
 variable "aws_vault_node_instance_type" {
   type = string
-  default = "m5.xlarge"
+  default = "t3.medium"
 }
 
 variable "aws_k8s_node_instance_type" {
   type = string
-  default = "m5.xlarge"
+  default = "t3.medium"
 }
 
 variable "aws_postgres_node_instance_type" {
   type = string
-  default = "m5.large"
+  default = "t3.medium"
+}
+
+variable "app_infra_ssh_privkey" {
+  type = string
 }
 
 variable "create_postgres" {
@@ -49,9 +53,5 @@ variable "admin_ip_additional" {
 }
 
 variable "boundary_cluster_admin_url" {
-  type = string
-}
-
-variable "boundary_instance_worker_addr" {
   type = string
 }

@@ -9,6 +9,10 @@ terraform {
   }
 }
 
+resource "random_pet" "postgres_k8s_admin_password" {
+  length = 4
+}
+
 locals {
   boundary_k8s_worker_config = <<-WORKER_CONFIG
     initial_upstreams = "${var.boundary_instance_worker_addr}"
@@ -99,7 +103,10 @@ locals {
       [ "sh", "-c", "host -t PTR $(curl -Ss https://checkip.amazonaws.com) | awk '{print substr($NF, 1, length($NF)-1)}' > /etc/public_dns" ],
       [ "sh", "-c", "sed -e 's/$/:30922/' < /etc/public_dns > /etc/boundary_worker_nodeport" ],
       [ "sh", "-c", "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=\"server\" sh -" ],
-      [ "setfacl", "-m", "u:ubuntu:r", "/etc/rancher/k3s/k3s.yaml" ]
+      [ "setfacl", "-m", "u:ubuntu:r", "/etc/rancher/k3s/k3s.yaml" ],
+      [ "sh", "-c", "curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | sh"],
+      [ "helm", "repo", "add", "bitnami", "https://charts.bitnami.com/bitnami" ],
+      [ "sh", "-c", "KUBECONFIG=/etc/rancher/k3s/k3s.yaml helm install k8s-postgres --set auth.postgresPassword=${random_pet.postgres_k8s_admin_password.id} bitnami/postgresql" ]
     ]
   }
   
