@@ -243,11 +243,11 @@ if $TF_VAR_create_boundary ; then
     echo "export TF_VAR_boundary_cluster_admin_url=\"$TF_VAR_boundary_cluster_admin_url\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
     export TF_VAR_unique_name=$(jq -r .unique_name.value <(echo "$hcp_output"))
     echo "export TF_VAR_unique_name=\"$TF_VAR_unique_name\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
-    boundary_admin_auth_method=$(jq .boundary_cluster_admin_auth_method.value <(echo "$hcp_output"))
+    boundary_admin_auth_method=$(jq -r .boundary_cluster_admin_auth_method.value <(echo "$hcp_output"))
     export boundary_admin_auth_method
-    boundary_admin_login=$(jq .boundary_cluster_admin_login.value <(echo "$hcp_output"))
+    boundary_admin_login=$(jq -r .boundary_cluster_admin_login.value <(echo "$hcp_output"))
     export boundary_admin_login
-    boundary_admin_password=$(jq .boundary_cluster_admin_password.value <(echo "$hcp_output"))
+    boundary_admin_password=$(jq -r .boundary_cluster_admin_password.value <(echo "$hcp_output"))
   fi
 else
   echo "Not creating a Boundary server because one already exists."
