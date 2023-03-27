@@ -33,6 +33,16 @@ output "aws_secgroup_private" {
   value = module.aws_infra.aws_secgroup_private_id
 }
 
+output "boundary_worker_ip_public" {
+  description = "The public IP of the Boundary worker."
+  value = module.boundary_setup.boundary_worker_ip_public
+}
+
+output "boundary_worker_dns_public" {
+  description = "The public DNS of the Boundary worker."
+  value = module.boundary_setup.boundary_worker_dns_public
+}
+
 output "postgres_server" {
   description = "The Postgres server hostname and IP created (if any)."
   value = jsonencode({"hostname"="${module.postgres.dns}","private_ip" = "${module.postgres.ip_private}"})

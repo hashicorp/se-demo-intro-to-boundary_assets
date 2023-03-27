@@ -10,10 +10,6 @@ provider "aws" {
   region = var.aws_region
 }
 
-provider "boundary" {
-  addr = var.boundary_cluster_admin_url
-}
-
 data "aws_ami" "ubuntu" {
   most_recent = true
 
@@ -49,7 +45,7 @@ resource "tls_private_key" "aws_infra_ssh_key" {
 
 resource "aws_key_pair" "app_infra" {
   key_name = "${var.unique_name}-app-infra"
-  public_key = tls_private_key.aws_infra_ssh_key.private_key_openssh
+  public_key = tls_private_key.aws_infra_ssh_key.public_key_openssh
 }
 
 resource "local_file" "aws_infra_ssh_privkey" {

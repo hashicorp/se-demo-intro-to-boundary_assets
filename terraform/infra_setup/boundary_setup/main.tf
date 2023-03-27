@@ -16,7 +16,7 @@ resource "aws_security_group" "boundary_demo_worker_inet" {
     description = "Unrestricted Internet access"
     from_port   = 9202
     to_port     = 9202
-    protocol    = "-1"
+    protocol    = "tcp"
     cidr_blocks = [ "0.0.0.0/0" ]
   }
 }
