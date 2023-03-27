@@ -93,13 +93,27 @@ echo "$boundary_cluster_info_text"
 echo ""
 while [ $boundary_cluster_info_success != "true" ]; do
   if [[ -z "$BOUNDARY_TOKEN" || -z "$TF_VAR_boundary_cluster_admin_url" ]]; then
-    read -p "HCP service principal client ID: " hcp_user_client_id
-    read -sp "HCP service principal client secret: " hcp_user_client_secret
-    echo ""
-    if [[ -z "$hcp_user_client_id" || -z "$hcp_user_client_secret" ]]; then
+    echo "This script can create the HCP Boundary cluster for you.  Note that "
+    echo "if it already exists, this script will fail and you will need to "
+    echo "re-run it with the login info for your existing cluster."
+    read -p "Create Boundary cluster in HCP?" create_boundary_amswer
+    if ! echo $defaults_answer | grep -E -i '^n$|^no$' > /dev/null; then
+      create_boundary=true
+      if [ -z "$HCP_CLIENT_ID" ]; then
+        read -p "HCP service principal client ID: " hcp_user_client_id
+      fi
+      if [ -z "$HCP_CLIENT_SECRET" ]; then
+        read -sp "HCP service principal client secret: " hcp_user_client_secret
+      fi
       echo ""
-      echo "No valid HCP service principal entered.  Enter info for an existing "
-      echo "Boundary cluster."
+    else
+      create_boundary=false
+    fi
+    if [[ -z "$hcp_user_client_id" || -z "$hcp_user_client_secret" || ! $create_boundary ]] ; then
+      echo ""
+      echo "User asked not to create HCP Boundary or no valid HCP service principal "
+      echo "entered."
+      echo "Enter info for an existing Boundary cluster."
       echo ""
       echo "$boundary_admin_url_info_text"
       echo ""
@@ -197,8 +211,6 @@ if ! [[ -z "$TF_VAR_boundary_cluster_admin_url" ]]; then
   echo "export TF_VAR_boundary_cluster_admin_url=\"$TF_VAR_boundary_cluster_admin_url\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
 
 fi
-
-source ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
 
 read -p "If everything above looks correct, press Enter to deploy the infrastructure." wait_for_ok
 

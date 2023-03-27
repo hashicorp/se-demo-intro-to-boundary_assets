@@ -22,7 +22,7 @@ resource "random_pet" "boundary_admin_password" {
 }
 
 resource "hcp_boundary_cluster" "boundary_demo" {
-  cluster_id = "${var.unique_name}"
+  cluster_id = "${substr(local.unique_name, 32)}"
   username = var.boundary_admin_login
   password = random_pet.boundary_admin_password.id
 }
