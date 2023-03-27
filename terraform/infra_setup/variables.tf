@@ -13,6 +13,11 @@ variable "aws_vpc_cidr" {
   default = "10.11.0.0/16"
 }
 
+variable "aws_boundary_worker_instance_type" {
+  type = string
+  default = "t3.small"
+}
+
 variable "aws_vault_node_instance_type" {
   type = string
   default = "m5.xlarge"
@@ -41,4 +46,12 @@ variable "create_k8s" {
 variable "admin_ip_additional" {
   type = string
   default = ""
+}
+
+variable "boundary_cluster_admin_url" {
+  type = string
+}
+
+variable "boundary_instance_worker_addr" {
+  type = string
 }

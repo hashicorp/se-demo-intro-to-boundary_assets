@@ -53,7 +53,6 @@ resource "random_pet" "vault_password" {
 }
 
 data "cloudinit_config" "postgres" {
-  count = var.create_postgres == true ? 1 : 0
   gzip = false
   base64_encode = true
   part {
@@ -71,7 +70,7 @@ resource "aws_instance" "postgres" {
   vpc_security_group_ids = [ var.pg_secgroup_id ]
   key_name = var.pg_ssh_keypair
   user_data_replace_on_change = true
-  user_data_base64 = data.cloudinit_config.postgres[0].rendered
+  user_data_base64 = data.cloudinit_config.postgres.rendered
   tags = {
     Name = "${var.unique_name}-postgres"
     app = "postgres"

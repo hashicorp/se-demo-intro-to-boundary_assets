@@ -1,18 +1,18 @@
 path "auth/token/lookup-self" {
-capabilities = ["read"]
+  capabilities = ["read"]
 }
 path "auth/token/renew-self" {
-capabilities = ["update"]
+  capabilities = ["update"]
 }
 path "auth/token/revoke-self" {
-capabilities = ["update"]
+  capabilities = ["update"]
 }
 path "sys/leases/renew" {
-capabilities = ["update"]
+  capabilities = ["update"]
 }
 path "sys/leases/revoke" {
-capabilities = ["update"]
+  capabilities = ["update"]
 }
 path "sys/capabilities-self" {
-capabilities = ["update"]
+  capabilities = ["update"]
 }

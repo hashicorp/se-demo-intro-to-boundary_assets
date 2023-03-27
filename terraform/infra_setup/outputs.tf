@@ -28,11 +28,6 @@ output "aws_subnet_private" {
   value = module.aws_infra.aws_subnet_private_id
 }
 
-output "aws_secgroup_inet" {
-  description = "The AWS VPC Internet-incoming security group ID."
-  value = module.aws_infra.aws_secgroup_inet_id
-}
-
 output "aws_secgroup_public" {
   description = "The AWS VPC public security group ID."
   value = module.aws_infra.aws_secgroup_public_id

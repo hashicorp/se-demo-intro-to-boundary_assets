@@ -13,11 +13,6 @@ output "aws_subnet_public_id" {
   value = aws_subnet.boundary_demo_public.id
 }
 
-output "aws_secgroup_inet_id" {
-  description = "The ID of the unrestricted Internet-incoming security group created for the demo."
-  value = aws_security_group.boundary_demo_inet.id
-}
-
 output "aws_secgroup_public_id" {
   description = "The ID of the public-subnet security group created for the demo."
   value = aws_security_group.boundary_demo_public.id
@@ -40,5 +35,5 @@ output "aws_ssh_keypair_app_infra" {
 
 output "app_infra_ssh_privkey" {
   description = "The raw content of the app infrastructure SSH private key."
-  value = file("${path.root}/gen_files/ssh_keys/app_infra")
+  value = tls_private_key.aws_infra_ssh_key.private_key_openssh
 }

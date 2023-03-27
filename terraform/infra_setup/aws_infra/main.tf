@@ -10,6 +10,10 @@ provider "aws" {
   region = var.aws_region
 }
 
+provider "boundary" {
+  addr = var.boundary_cluster_admin_url
+}
+
 data "aws_ami" "ubuntu" {
   most_recent = true
 
@@ -39,6 +43,20 @@ locals {
   usable_azs = sort(flatten(tolist(setintersection([ for az_set in data.aws_ec2_instance_type_offerings.instance_types : toset(az_set.locations) ]))))
 }
 
+resource "tls_private_key" "aws_infra_ssh_key" {
+  algorithm = "ED25519"
+}
+
+resource "aws_key_pair" "app_infra" {
+  key_name = "${var.unique_name}-app-infra"
+  public_key = tls_private_key.aws_infra_ssh_key.private_key_openssh
+}
+
+resource "local_file" "aws_infra_ssh_privkey" {
+  content = tls_private_key.aws_infra_ssh_key.private_key_openssh
+  filename = "${path.root}/gen_files/ssh_keys/app_infra"
+}
+
 resource "aws_vpc" "boundary_demo" {
   cidr_block           = var.aws_vpc_cidr
   enable_dns_hostnames = true
@@ -57,11 +75,6 @@ resource "aws_subnet" "boundary_demo_public" {
   availability_zone = aws_subnet.boundary_demo_private.availability_zone
 }
 
-resource "aws_key_pair" "app_infra" {
-  key_name = "${var.unique_name}-app-infra"
-  public_key = file("${path.root}/gen_files/ssh_keys/app_infra.pub")
-}
-
 resource "aws_security_group" "boundary_demo_public" {
   name = "${var.unique_name}-public"
   vpc_id = aws_vpc.boundary_demo.id
@@ -71,25 +84,6 @@ resource "aws_security_group" "boundary_demo_public" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = compact(flatten([aws_vpc.boundary_demo.cidr_block, var.admin_ip, var.admin_ip_additional]))
-  }
-  egress {
-    description = "Unrestricted egress"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = [ "0.0.0.0/0" ]
-  }
-}
-
-resource "aws_security_group" "boundary_demo_inet" {
-  name = "${var.unique_name}-inet"
-  vpc_id = aws_vpc.boundary_demo.id
-  ingress {
-    description = "Unrestricted Internet access"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = [ "0.0.0.0/0" ]
   }
   egress {
     description = "Unrestricted egress"

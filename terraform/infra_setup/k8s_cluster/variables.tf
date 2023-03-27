@@ -7,6 +7,10 @@ variable "aws_region" {
   type = string
 }
 
+variable "aws_vpc" {
+  type = string
+}
+
 variable "aws_ami" {
   type = string
 }
@@ -42,5 +46,13 @@ variable "k8s_boundary_worker_lb_secgroup_id" {
 }
 
 variable "k8s_ssh_keypair" {
+  type = string
+}
+
+variable "boundary_cluster_admin_url" {
+  type = string
+}
+
+variable "boundary_instance_worker_addr" {
   type = string
 }

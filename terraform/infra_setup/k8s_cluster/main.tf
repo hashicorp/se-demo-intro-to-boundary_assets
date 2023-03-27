@@ -3,12 +3,62 @@ terraform {
     aws = {
       source = "hashicorp/aws"
     }
+    boundary = {
+      source = "hashicorp/boundary"
+    }
   }
 }
 
 locals {
+  boundary_k8s_worker_config = <<-WORKER_CONFIG
+    initial_upstreams = "${var.boundary_instance_worker_addr}"
+
+    listener "tcp" {
+      purpose = "proxy"
+      address = "0.0.0.0"
+    }
+
+    worker {
+      auth_storage_path = "/etc/boundary-worker-data"
+      public_addr = "file:///etc/boundary_worker_nodeport"
+      controller_generated_activation_token = "${coalesce(boundary_worker.hcp_pki_k8s_worker[0].controller_generated_activation_token,"null")}"
+
+      tags {
+        type = "k8s_deployment"
+        cloud = "aws"
+        region = "${var.aws_region}"
+        unique_name = "${var.unique_name}-k8s"
+        exec_type = "k8s"
+      }
+    }
+    WORKER_CONFIG
+
   cloudinit_config_k8s_cluster = {
     write_files = [
+      {
+        content = yamlencode(local.boundary_k8s_worker_configmap)
+        owner = "ubuntu:ubuntu"
+        path = "/home/ubuntu/k8s_manifests/boundary_worker/boundary_k8s_worker_configmap.yaml"
+        permissions = "0644"
+      },
+      {
+        content = yamlencode(local.boundary_k8s_worker_auth_storage)
+        owner = "ubuntu:ubuntu"
+        path = "/home/ubuntu/k8s_manifests/boundary_worker/boundary_k8s_worker_auth_pvc.yaml"
+        permissions = "0644"
+      },
+      {
+        content = yamlencode(local.boundary_k8s_worker_deployment)
+        owner = "ubuntu:ubuntu"
+        path = "/home/ubuntu/k8s_manifests/boundary_worker/boundary_k8s_worker_deployment.yaml"
+        permissions = "0644"
+      },
+      {
+        content = yamlencode(local.boundary_k8s_worker_service)
+        owner = "ubuntu:ubuntu"
+        path = "/home/ubuntu/k8s_manifests/boundary_worker/boundary_k8s_worker_svc.yaml"
+        permissions = "0644"
+      },
       {
         content = file("${path.root}/files/gpg_pubkeys/hashicorp-archive-keyring.gpg")
         owner = "root:root"
@@ -45,14 +95,154 @@ locals {
       [ "sh", "-c", "UCF_FORCE_CONFFOLD=true apt upgrade -y" ],
       [ "apt", "install", "-y", "bind9-dnsutils", "jq", "curl", "unzip", "docker-compose", "kubectl", "acl" ],
       [ "systemctl", "enable", "--now", "apt-daily-upgrade.service", "apt-daily-upgrade.timer", "docker" ],
+      [ "sh", "-c", "curl -Ss https://checkip.amazonaws.com > /etc/public_ip" ],
+      [ "sh", "-c", "host -t PTR $(curl -Ss https://checkip.amazonaws.com) | awk '{print substr($NF, 1, length($NF)-1)}' > /etc/public_dns" ],
+      [ "sh", "-c", "sed -e 's/$/:30922/' < /etc/public_dns > /etc/boundary_worker_nodeport" ],
       [ "sh", "-c", "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=\"server\" sh -" ],
       [ "setfacl", "-m", "u:ubuntu:r", "/etc/rancher/k3s/k3s.yaml" ]
     ]
   }
+  
+  boundary_k8s_worker_configmap = {
+    apiVersion = "v1"
+    kind = "Service"
+    metadata = {
+      name = "boundary-k3s-worker-config"
+    }
+    data = {
+      boundary-worker-config = local.boundary_k8s_worker_config
+    }
+  }
+  
+  boundary_k8s_worker_auth_storage = {
+    apiVersion = "v1"
+    kind = "PersistentVolumeClaim"
+    metadata = {
+      name = "boundary-k8s-worker-auth"
+    }
+    spec = {
+      accessModes = [ "ReadWriteOnce" ]
+      storageClassName = "local-path"
+      resources = {
+        requests = {
+          storage = "64Mi"
+        }
+      }
+    }
+  }
+  
+  boundary_k8s_worker_deployment = {
+    apiVersion = "apps/v1"
+    kind = "Deployment"
+    metadata = {
+      name = "boundary-worker-${var.unique_name}"
+      labels = {
+        app = "boundary"
+        component = "worker"
+        env = "k3s"
+      }
+    }
+    spec = {
+      replicas = 1
+      selector = {
+        matchLabels = {
+          app = "boundary"
+          component = "worker"
+          env = "k3s"
+        }
+      }
+      template = {
+        metadata = {
+          labels = {
+            app = "boundary"
+            component = "worker"
+            env = "k3s"
+          }
+        }
+        spec = {
+          containers = [
+            {
+              name = "boundary-worker"
+              image = "hashicorp/boundary-worker-hcp"
+              command = [ "boundary-worker" ]
+              args = [ "server", "-config", "/etc/boundary/boundary-worker-config" ]
+              securityContext = {
+                capabilities = {
+                  add = [ "IPC_LOCK" ]
+                }
+              }
+              ports = [
+                {
+                  containerPort = 9202
+                }
+              ]
+              volumeMounts = [
+                {
+                  mountPath = "/etc/boundary"
+                  name = "boundary-config"
+                },
+                {
+                  mountPath = "/etc/boundary-worker-data"
+                  name = "boundary-k3s-worker-auth"
+                }
+              ]
+            }
+          ]
+          volumes = [
+            {
+              name = "boundary-config"
+              configMap = {
+                name = "boundary-k3s-worker-config"
+              }
+            },
+            {
+              name = "boundary-k3s-worker-auth"
+              persistentVolumeClaim = {
+                claimName = "boundary-k8s-worker-auth"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+
+  boundary_k8s_worker_service = {
+    apiVersion = "v1"
+    kind = "Service"
+    metadata = {
+      name = "boundary-k3s-worker"
+    }
+    spec = {
+      type = "NodePort"
+      selector = {
+        app = "boundary"
+        component = "worker"
+        env = "k3s"
+      }
+      ports = [
+        {
+          port = 9202
+          nodePort = 30922
+        }
+      ]
+    }
+  }
+}
+
+resource "boundary_worker" "hcp_pki_k8s_worker" {
+  count = var.create_k8s == true ? 1 : 0
+  scope_id = "global"
+  name = "${var.unique_name}-k8s"
+  worker_generated_auth_token = ""
+}
+
+resource "local_file" "boundary_k8s_worker_config" {
+  content = local.boundary_k8s_worker_config
+  filename = "${path.root}/gen_files/boundary_config/boundary-k8s-worker-config.hcl"
 }
 
 data "cloudinit_config" "k8s_cluster" {
-  count = var.create_k8s == true ? 1 : 0
   gzip = false
   base64_encode = true
   part {
@@ -70,7 +260,7 @@ resource "aws_instance" "k8s_cluster" {
   vpc_security_group_ids = [ var.k8s_secgroup_id ]
   key_name = var.k8s_ssh_keypair
   user_data_replace_on_change = true
-  user_data_base64 = data.cloudinit_config.k8s_cluster[0].rendered
+  user_data_base64 = data.cloudinit_config.k8s_cluster.rendered
   tags = {
     Name = "${var.unique_name}-k8s-cluster"
     app = "kubernetes"
@@ -78,18 +268,21 @@ resource "aws_instance" "k8s_cluster" {
   }
 }
 
+/*
 resource "aws_lb" "k8s_worker" {
   name = var.unique_name
   load_balancer_type = "network"
   subnets = [ var.k8s_boundary_worker_lb_subnet_id ]
 }
 
-/*
-resource "aws_lb_target_group" "k8s_api" {
-  
+resource "aws_lb_target_group" "k8s_nodes_boundary" {
+  name = "${var.unique_name}-k8s-nodes-boundary"
+  port = 30092
+  protocol = "TCP"
+  vpc_id = var.aws_vpc
 }
 
-resource "aws_lb_target_group_attachment" "k8s_api_lb_targets" {
+resource "aws_lb_target_group_attachment" "k8s_node_targets" {
   
 }
 

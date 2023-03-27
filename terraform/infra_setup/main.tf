@@ -3,11 +3,18 @@ terraform {
     aws = {
       source = "hashicorp/aws"
     }
+    boundary = {
+      source = "hashicorp/boundary"
+    }
   }
 }
 
 provider "aws" {
   region = var.aws_region
+}
+
+provider "boundary" {
+  addr = var.boundary_cluster_admin_url
 }
 
 resource "random_pet" "unique_name" {
@@ -38,6 +45,19 @@ module "aws_infra" {
   aws_vpc_cidr = var.aws_vpc_cidr
 }
 
+module "boundary_setup" {
+  depends_on = [ module.aws_infra ]
+  source = "./boundary_setup"
+  unique_name = local.unique_name
+  aws_region = var.aws_region
+  aws_vpc = module.aws_infra.aws_vpc
+  aws_ami = module.aws_infra.aws_ami_ubuntu
+  boundary_worker_instance_type = var.aws_boundary_worker_instance_type
+  boundary_worker_subnet_id = module.aws_infra.aws_subnet_public_id
+  boundary_cluster_admin_url = var.boundary_cluster_admin_url
+  aws_public_secgroup_id = module.aws_infra.aws_secgroup_public_id
+}
+
 module "postgres" {
   depends_on = [ module.aws_infra ]
   source = "./postgres"
@@ -51,11 +71,14 @@ module "postgres" {
 }
 
 module "k8s_cluster" {
-  depends_on = [ module.aws_infra ]
+  depends_on = [ module.aws_infra, module.boundary_setup ]
   source = "./k8s_cluster"
   unique_name = local.unique_name
   aws_region = var.aws_region
+  aws_vpc = module.aws_infra.aws_vpc
   aws_ami = module.aws_infra.aws_ami_ubuntu
+  boundary_cluster_admin_url = var.boundary_cluster_admin_url
+  boundary_instance_worker_addr = "${module.boundary_setup.boundary_worker_dns_public}:9202"
   k8s_instance_type = var.aws_k8s_node_instance_type
   k8s_subnet_id = module.aws_infra.aws_subnet_private_id
   k8s_secgroup_id = module.aws_infra.aws_secgroup_private_id
