@@ -6,6 +6,7 @@ HCP_CLIENT_ID=""
 HCP_CLIENT_SECRET=""
 TF_BASE=""
 TF_VAR_boundary_cluster_admin_url=""
+TF_VAR_admin_ip_additional=""
 BOUNDARY_TOKEN=""
 BOUNDARY_ADDR=""
 
