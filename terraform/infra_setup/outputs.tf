@@ -60,5 +60,5 @@ output "k8s_cluster_api" {
 
 output "vault_server" {
   description = "The Vault server hostname and IP created."
-  value = {"hostname"="${module.vault_server.dns}","private_ip" = "${module.vault_server.ip_private}"}
+  value = module.vault_server.dns
 }
