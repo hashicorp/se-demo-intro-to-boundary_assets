@@ -24,7 +24,7 @@ variable "aws_vault_node_instance_type" {
 
 variable "aws_k8s_node_instance_type" {
   type = string
-  default = "t3.medium"
+  default = "t3.large"
 }
 
 variable "aws_postgres_node_instance_type" {

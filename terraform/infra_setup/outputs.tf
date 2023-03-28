@@ -44,21 +44,21 @@ output "boundary_worker_dns_public" {
 }
 
 output "postgres_server" {
-  description = "The Postgres server hostname and IP created (if any)."
-  value = jsonencode({"hostname"="${module.postgres.dns}","private_ip" = "${module.postgres.ip_private}"})
+  description = "The Postgres server hostname."
+  value = module.postgres.dns
 }
 
 output "postgres_k8s_admin_password" {
-  description = "The Kubernetes postgres server admin password (if any)."
+  description = "The Kubernetes postgres server admin password."
   value = module.k8s_cluster.postgres_k8s_admin_password
 }
 
 output "k8s_cluster_api" {
-  description = "The Kubernetes cluster API endpoint hostname and IP (if any)."
-  value = jsonencode({"hostname"="${module.k8s_cluster.dns}","private_ip"="${module.k8s_cluster.ip_private}"})
+  description = "The Kubernetes cluster API endpoint hostname."
+  value = module.k8s_cluster.dns
 }
 
 output "vault_server" {
   description = "The Vault server hostname and IP created."
-  value = jsonencode({"hostname"="${module.vault_server.dns}","private_ip" = "${module.vault_server.ip_private}"})
+  value = {"hostname"="${module.vault_server.dns}","private_ip" = "${module.vault_server.ip_private}"}
 }

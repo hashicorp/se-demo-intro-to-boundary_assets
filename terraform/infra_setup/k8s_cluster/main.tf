@@ -15,14 +15,13 @@ resource "random_pet" "postgres_k8s_admin_password" {
 
 locals {
   boundary_k8s_worker_config = <<-WORKER_CONFIG
-    initial_upstreams = "${var.boundary_instance_worker_addr}"
-
     listener "tcp" {
       purpose = "proxy"
       address = "0.0.0.0"
     }
 
     worker {
+      initial_upstreams = [ "${var.boundary_instance_worker_addr}" ]
       auth_storage_path = "/etc/boundary-worker-data"
       public_addr = "file:///etc/boundary-worker-network/boundary_worker_nodeport"
       controller_generated_activation_token = "${coalesce(boundary_worker.hcp_pki_k8s_worker[0].controller_generated_activation_token,"null")}"
@@ -107,7 +106,7 @@ locals {
       [ "sh", "-c", "curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash"],
       [ "helm", "repo", "add", "bitnami", "https://charts.bitnami.com/bitnami" ],
       [ "sh", "-c", "KUBECONFIG=/etc/rancher/k3s/k3s.yaml helm install k8s-postgres --set auth.postgresPassword=${random_pet.postgres_k8s_admin_password.id} bitnami/postgresql" ],
-      [ "sh", "-c", "KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl create configmap boundary-nodeport --from-file /etc/boundary_worker_nodeport"]
+      [ "sh", "-c", "KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl create configmap boundary-worker-nodeport --from-file /etc/boundary_worker_nodeport"]
     ]
   }
   
@@ -204,7 +203,7 @@ locals {
             {
               name = "boundary-config"
               configMap = {
-                name = "boundary-k3s-worker-config"
+                name = "boundary-worker-config"
               }
             },
             {
