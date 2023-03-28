@@ -24,7 +24,7 @@ locals {
 
     worker {
       auth_storage_path = "/etc/boundary-worker-data"
-      public_addr = "file:///etc/boundary_worker_nodeport"
+      public_addr = "file:///etc/boundary-worker-network/boundary_worker_nodeport"
       controller_generated_activation_token = "${coalesce(boundary_worker.hcp_pki_k8s_worker[0].controller_generated_activation_token,"null")}"
 
       tags {
@@ -41,26 +41,26 @@ locals {
     write_files = [
       {
         content = yamlencode(local.boundary_k8s_worker_configmap)
-        owner = "ubuntu:ubuntu"
-        path = "/home/ubuntu/k8s_manifests/boundary_worker/boundary_k8s_worker_configmap.yaml"
+        owner = "root:root"
+        path = "/tmp/k8s_manifests/boundary_worker/boundary_k8s_worker_configmap.yaml"
         permissions = "0644"
       },
       {
         content = yamlencode(local.boundary_k8s_worker_auth_storage)
-        owner = "ubuntu:ubuntu"
-        path = "/home/ubuntu/k8s_manifests/boundary_worker/boundary_k8s_worker_auth_pvc.yaml"
+        owner = "root:root"
+        path = "/tmp/k8s_manifests/boundary_worker/boundary_k8s_worker_auth_pvc.yaml"
         permissions = "0644"
       },
       {
         content = yamlencode(local.boundary_k8s_worker_deployment)
-        owner = "ubuntu:ubuntu"
-        path = "/home/ubuntu/k8s_manifests/boundary_worker/boundary_k8s_worker_deployment.yaml"
+        owner = "root:root"
+        path = "/tmp/k8s_manifests/boundary_worker/boundary_k8s_worker_deployment.yaml"
         permissions = "0644"
       },
       {
         content = yamlencode(local.boundary_k8s_worker_service)
-        owner = "ubuntu:ubuntu"
-        path = "/home/ubuntu/k8s_manifests/boundary_worker/boundary_k8s_worker_svc.yaml"
+        owner = "root:root"
+        path = "/tmp/k8s_manifests/boundary_worker/boundary_k8s_worker_svc.yaml"
         permissions = "0644"
       },
       {
@@ -104,17 +104,18 @@ locals {
       [ "sh", "-c", "sed -e 's/$/:30922/' < /etc/public_dns > /etc/boundary_worker_nodeport" ],
       [ "sh", "-c", "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=\"server\" sh -" ],
       [ "setfacl", "-m", "u:ubuntu:r", "/etc/rancher/k3s/k3s.yaml" ],
-      [ "sh", "-c", "curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | sh"],
+      [ "sh", "-c", "curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash"],
       [ "helm", "repo", "add", "bitnami", "https://charts.bitnami.com/bitnami" ],
-      [ "sh", "-c", "KUBECONFIG=/etc/rancher/k3s/k3s.yaml helm install k8s-postgres --set auth.postgresPassword=${random_pet.postgres_k8s_admin_password.id} bitnami/postgresql" ]
+      [ "sh", "-c", "KUBECONFIG=/etc/rancher/k3s/k3s.yaml helm install k8s-postgres --set auth.postgresPassword=${random_pet.postgres_k8s_admin_password.id} bitnami/postgresql" ],
+      [ "sh", "-c", "KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl create configmap boundary-nodeport --from-file /etc/boundary_worker_nodeport"]
     ]
   }
   
   boundary_k8s_worker_configmap = {
     apiVersion = "v1"
-    kind = "Service"
+    kind = "ConfigMap"
     metadata = {
-      name = "boundary-k3s-worker-config"
+      name = "boundary-worker-config"
     }
     data = {
       boundary-worker-config = local.boundary_k8s_worker_config
@@ -125,7 +126,7 @@ locals {
     apiVersion = "v1"
     kind = "PersistentVolumeClaim"
     metadata = {
-      name = "boundary-k8s-worker-auth"
+      name = "boundary-worker-auth"
     }
     spec = {
       accessModes = [ "ReadWriteOnce" ]
@@ -190,7 +191,11 @@ locals {
                 },
                 {
                   mountPath = "/etc/boundary-worker-data"
-                  name = "boundary-k3s-worker-auth"
+                  name = "boundary-worker-auth"
+                },
+                {
+                  mountPath = "/etc/boundary-worker-network"
+                  name = "boundary-worker-nodeport"
                 }
               ]
             }
@@ -203,9 +208,15 @@ locals {
               }
             },
             {
-              name = "boundary-k3s-worker-auth"
+              name = "boundary-worker-nodeport"
+              configMap = {
+                name = "boundary-worker-nodeport"
+              }
+            },
+            {
+              name = "boundary-worker-auth"
               persistentVolumeClaim = {
-                claimName = "boundary-k8s-worker-auth"
+                claimName = "boundary-worker-auth"
               }
             }
           ]

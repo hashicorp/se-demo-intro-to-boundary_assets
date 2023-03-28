@@ -107,7 +107,7 @@ locals {
       },
       {
         content = var.app_infra_ssh_privkey
-        owner = "ubuntu:ubuntu"
+        owner = "root:root"
         path = "/tmp/app_infra"
         permissions = "0600"
       }
@@ -119,7 +119,7 @@ locals {
       [ "apt-add-repository", "universe" ],
       [ "sh", "-c", "gpg --dearmor < /tmp/hashicorp-archive-keyring.gpg > /usr/share/keyrings/hashicorp-archive-keyring.gpg" ],
       [ "sh", "-c", "echo \"deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main\" > /etc/apt/sources.list.d/hashicorp.list" ],
-      [ "sh", "-c", "cp /tmp/app_infra ~/.ssh" ],
+      [ "sh", "-c", "cp /tmp/app_infra /home/ubuntu/.ssh && chown ubuntu:ubuntu /home/ubuntu/.ssh/app_infra" ],
       [ "apt", "update" ],
       [ "sh", "-c", "UCF_FORCE_CONFFOLD=true apt upgrade -y" ],
       [ "mkdir", "/etc/boundary-worker-data" ],
