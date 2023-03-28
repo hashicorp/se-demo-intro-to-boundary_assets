@@ -26,16 +26,6 @@ if [[ -z "$TF_BASE" ]]; then
   echo "export TF_BASE=\"$TF_BASE\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
 fi
 
-#mkdir -p ${TF_BASE}/{infra_setup,demo_setup}/gen_files/ssh_keys
-
-#if ! [ -f ${TF_BASE}/infra_setup/gen_files/ssh_keys/app_infra ]; then
-#  ssh-keygen -f ${TF_BASE}/infra_setup/gen_files/ssh_keys/app_infra -N ""
-#fi
-
-#if ! [ -f ${TF_BASE}/demo_setup/gen_files/ssh_keys/boundary_infra ]; then
-#  ssh-keygen -f ${TF_BASE}/demo_setup/gen_files/ssh_keys/boundary_infra -N ""
-#fi
-
 TF_VAR_create_postgres=true
 TF_VAR_create_k8s=true
 TF_VAR_create_boundary=true
@@ -105,19 +95,17 @@ while [ $boundary_cluster_info_success != "true" ]; do
       create_boundary=true
       if [ -z "$HCP_CLIENT_ID" ]; then
         read -p "HCP service principal client ID: " hcp_user_client_id
-      else
-        hcp_user_client_id="$HCP_CLIENT_ID"
+        export HCP_CLIENT_ID="$hcp_user_client_id"
       fi
       if [ -z "$HCP_CLIENT_SECRET" ]; then
         read -sp "HCP service principal client secret: " hcp_user_client_secret
-      else
-        hcp_user_client_secret="$HCP_CLIENT_SECRET"
+        export HCP_CLIENT_SECRET="$hcp_user_client_secret"
       fi
       echo ""
     else
       create_boundary=false
     fi
-    if [[ -z "$hcp_user_client_id" || -z "$hcp_user_client_secret" || ! $create_boundary ]] ; then
+    if [[ -z "$HCP_CLIENT_ID" || -z "$HCP_CLIENT_SECRET" || ! $create_boundary ]] ; then
       echo ""
       echo "User asked not to create HCP Boundary or no valid HCP service principal "
       echo "entered."
@@ -137,7 +125,7 @@ while [ $boundary_cluster_info_success != "true" ]; do
         echo ""
       else
         boundary_cluster_info_success="true"
-        export TF_VAR_create_boundary=false
+        TF_VAR_create_boundary=false
         echo ""
         echo "Existing Boundary cluster will be used with the supplied admin "
         echo "credentials."
@@ -147,12 +135,16 @@ while [ $boundary_cluster_info_success != "true" ]; do
       echo ""
       echo "Boundary cluster will be created with the supplied HCP credentials."
       echo ""
-      echo "export HCP_CLIENT_ID=\"$hcp_user_client_id\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
-      echo "export HCP_CLIENT_SECRET=\"$hcp_user_client_secret\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
+      if ! grep "export HCP_CLIENT_ID=\"$HCP_CLIENT_ID\"" ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh >/dev/null 2>&1; then
+        echo "export HCP_CLIENT_ID=\"$HCP_CLIENT_ID\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
+      fi
+      if ! grep "export HCP_CLIENT_SECRET=\"$HCP_CLIENT_SECRET\"" ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh >/dev/null 2>&1; then
+        echo "export HCP_CLIENT_SECRET=\"$HCP_CLIENT_SECRET\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
+      fi
     fi
   else
     boundary_cluster_info_success="true"
-    export TF_VAR_create_boundary=false
+    TF_VAR_create_boundary=false
     echo ""
     echo "Existing Boundary cluster will be used with the existing token."
   fi
@@ -176,22 +168,36 @@ if echo $defaults_answer | grep -E -i '^n$|^no$' > /dev/null; then
   fi
 fi
 
-echo "$admin_ip_info_text"
-echo ""
-read -p "(optional) Additional admin IP to allow connections from: " admin_ip_additional
-if [[ ! -z $admin_ip_additional ]] ; then
-  if [[ ! "$admin_ip_additional" =~ /[0-9]{1,2}$ ]] ; then
-    TF_VAR_admin_ip_additional="${admin_ip_additional}/32"
+if [[ -z "$TF_VAR_admin_ip_additional" ]]; then
+  echo "$admin_ip_info_text"
+  echo ""
+  read -p "(optional) Additional admin IP to allow connections from: " admin_ip_additional
+  if [[ ! -z "$admin_ip_additional" ]] ; then
+    if [[ ! "$admin_ip_additional" =~ /[0-9]{1,2}$ ]] ; then
+      TF_VAR_admin_ip_additional="${admin_ip_additional}/32"
+    else
+      TF_VAR_admin_ip_additional="$admin_ip_additional"
+    fi
   else
-    TF_VAR_admin_ip_additional="$admin_ip_additional"
+    TF_VAR_admin_ip_additional=""
   fi
 else
-  TF_VAR_admin_ip_additional=""
+  echo "Re-using previously-provided admin IP: $TF_VAR_admin_ip_additional"
+fi
+
+export TF_VAR_admin_ip_additional
+if ! grep "export TF_VAR_admin_ip_additional=\"$TF_VAR_admin_ip_additional\"" ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh >/dev/null 2>&1; then
+  echo "export TF_VAR_admin_ip_additional=\"$TF_VAR_admin_ip_additional\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
 fi
 
 if [[ $TF_VAR_create_k8s || $TF_VAR_create_postgres || $TF_VAR_create_boundary ]]; then
   echo ""
 fi
+
+if $TF_VAR_create_boundary ; then
+  echo "Will create the Boundary cluster."
+fi
+export TF_VAR_create_boundary
 
 if $TF_VAR_create_k8s ; then
   echo "Will create the Kubernetes cluster."
@@ -203,16 +209,9 @@ if $TF_VAR_create_postgres ; then
 fi
 export TF_VAR_create_postgres
 
-if $TF_VAR_create_boundary ; then
-  echo "Will create the Boundary cluster."
-fi
-export TF_VAR_create_boundary
-
 if [[ ! -z "$TF_VAR_admin_ip_additional" ]] ; then
   echo ""
   echo "Will allow access to this IP: $TF_VAR_admin_ip_additional"
-  export TF_VAR_admin_ip_additional
-  echo "export TF_VAR_admin_ip_additional=\"$TF_VAR_admin_ip_additional\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
 fi
 
 if ! [[ -z "$TF_VAR_boundary_cluster_admin_url" ]]; then

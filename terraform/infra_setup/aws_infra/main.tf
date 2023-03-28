@@ -51,6 +51,7 @@ resource "aws_key_pair" "app_infra" {
 resource "local_file" "aws_infra_ssh_privkey" {
   content = tls_private_key.aws_infra_ssh_key.private_key_openssh
   filename = "${path.root}/gen_files/ssh_keys/app_infra"
+  file_permission = "0600"
 }
 
 resource "aws_vpc" "boundary_demo" {

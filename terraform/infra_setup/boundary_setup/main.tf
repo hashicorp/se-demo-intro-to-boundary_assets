@@ -33,6 +33,7 @@ resource "aws_key_pair" "boundary_infra" {
 resource "local_file" "boundary_instance_ssh_privkey" {
   content = tls_private_key.boundary_instance_worker_ssh_key.private_key_openssh
   filename = "${path.root}/gen_files/ssh_keys/boundary_infra"
+  file_permission = "0600"
 }
 
 resource "boundary_worker" "hcp_pki_instance_worker" {
@@ -82,12 +83,6 @@ locals {
         permissions = "0644"
       },
       {
-        content = var.app_infra_ssh_privkey
-        owner = "ubuntu:ubuntu"
-        path = "/home/ubuntu/.ssh/app_infra"
-        permissions = "0600"
-      },
-      {
         content = <<-APT_NO_PROMPT_CONFIG
           Dpkg::Options {
             "--force-confdef";
@@ -109,7 +104,14 @@ locals {
         owner = "root:root"
         path = "/etc/boundary.d/boundary-pki-worker-config.hcl"
         permissions = "0644"
+      },
+      {
+        content = var.app_infra_ssh_privkey
+        owner = "ubuntu:ubuntu"
+        path = "/tmp/app_infra"
+        permissions = "0600"
       }
+
     ]
     runcmd = [
       [ "systemctl", "disable", "--now", "unattended-upgrades.service", "apt-daily-upgrade.service", "apt-daily-upgrade.timer" ],
@@ -117,6 +119,7 @@ locals {
       [ "apt-add-repository", "universe" ],
       [ "sh", "-c", "gpg --dearmor < /tmp/hashicorp-archive-keyring.gpg > /usr/share/keyrings/hashicorp-archive-keyring.gpg" ],
       [ "sh", "-c", "echo \"deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main\" > /etc/apt/sources.list.d/hashicorp.list" ],
+      [ "sh", "-c", "cp /tmp/app_infra ~/.ssh" ],
       [ "apt", "update" ],
       [ "sh", "-c", "UCF_FORCE_CONFFOLD=true apt upgrade -y" ],
       [ "mkdir", "/etc/boundary-worker-data" ],
