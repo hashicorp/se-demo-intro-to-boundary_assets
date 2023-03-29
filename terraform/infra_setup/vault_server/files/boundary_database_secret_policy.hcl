@@ -1,3 +1,3 @@
-path "product-api/creds/*" {
+path "postgres/creds/*" {
   capabilities = [ "read" ]
 }
