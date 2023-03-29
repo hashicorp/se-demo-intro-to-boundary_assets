@@ -99,7 +99,7 @@ while [ $boundary_cluster_info_success != "true" ]; do
         export HCP_CLIENT_ID="$hcp_user_client_id"
       fi
       if [ -z "$HCP_CLIENT_SECRET" ]; then
-        read -sp "HCP service principal client secret: " hcp_user_client_secret
+        read -sp "HCP service principal client secret (not shown): " hcp_user_client_secret
         export HCP_CLIENT_SECRET="$hcp_user_client_secret"
       fi
       echo ""
