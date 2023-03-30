@@ -239,10 +239,10 @@ if $TF_VAR_create_boundary ; then
   else
     hcp_output="$(terraform output -json)"
     echo "$hcp_output" > ${TF_BASE}/hcp_output.json
-    export TF_VAR_boundary_cluster_admin_url=$(jq -r .boundary_cluster_admin_url.value <(echo "$hcp_output"))
-    echo "export TF_VAR_boundary_cluster_admin_url=\"$TF_VAR_boundary_cluster_admin_url\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
     export TF_VAR_unique_name=$(jq -r .unique_name.value <(echo "$hcp_output"))
     echo "export TF_VAR_unique_name=\"$TF_VAR_unique_name\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
+    export TF_VAR_boundary_cluster_admin_url=$(jq -r .boundary_cluster_admin_url.value <(echo "$hcp_output"))
+    echo "export TF_VAR_boundary_cluster_admin_url=\"$TF_VAR_boundary_cluster_admin_url\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
     boundary_admin_auth_method=$(jq -r .boundary_cluster_admin_auth_method.value <(echo "$hcp_output"))
     export boundary_admin_auth_method
     boundary_admin_login=$(jq -r .boundary_admin_login.value <(echo "$hcp_output"))
@@ -251,6 +251,7 @@ if $TF_VAR_create_boundary ; then
   fi
 else
   echo "Not creating a Boundary server because one already exists."
+  export TF_VAR_unique_name=""
 fi
 
 echo "HCP Boundary admin URL: $TF_VAR_boundary_cluster_admin_url"
