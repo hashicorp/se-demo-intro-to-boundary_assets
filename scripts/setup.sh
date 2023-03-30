@@ -91,7 +91,7 @@ while [ $boundary_cluster_info_success != "true" ]; do
     echo "This script can create the HCP Boundary cluster for you.  Note that "
     echo "if it already exists, this script will fail and you will need to "
     echo "re-run it with the login info for your existing cluster."
-    read -p "Create Boundary cluster in HCP? " create_boundary_answer
+    read -p "Create Boundary cluster in HCP (default: yes)? " create_boundary_answer
     if ! echo $create_boundary_answer | grep -E -i '^n$|^no$' > /dev/null; then
       create_boundary=true
       if [ -z "$HCP_CLIENT_ID" ]; then
@@ -153,17 +153,17 @@ done
 
 echo "$default_setup_info_text"
 echo ""
-read -p "Do you want to accept the default track setup? " defaults_answer
+read -p "Do you want to accept the default track setup (default: yes)? " defaults_answer
 if echo $defaults_answer | grep -E -i '^n$|^no$' > /dev/null; then
   echo "$target_k8s_info_text"
   echo ""
-  read -p "Do you want to create the Kubernetes cluster as described? " k8s_answer
+  read -p "Do you want to create the Kubernetes cluster as described (default: yes)? " k8s_answer
   if echo $k8s_answer | grep -E -i '^n$|^no$' ; then
     TF_VAR_create_k8s=false
   fi
   echo "$target_db_info_text"
   echo ""
-  read -p "Do you want to create the Postgres instance as described? " db_answer
+  read -p "Do you want to create the Postgres instance as described (default: yes)? " db_answer
   if echo $db_answer | grep -E -i '^n$|^no$' ; then
     TF_VAR_create_postgres=false
   fi
@@ -172,7 +172,7 @@ fi
 if [[ -z "$TF_VAR_admin_ip_additional" ]]; then
   echo "$admin_ip_info_text"
   echo ""
-  read -p "(optional) Additional admin IP to allow connections from: " admin_ip_additional
+  read -p "(optional) Additional IP to allow connections from (Enter to skip): " admin_ip_additional
   if [[ ! -z "$admin_ip_additional" ]] ; then
     if [[ ! "$admin_ip_additional" =~ /[0-9]{1,2}$ ]] ; then
       TF_VAR_admin_ip_additional="${admin_ip_additional}/32"
