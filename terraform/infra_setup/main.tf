@@ -92,7 +92,7 @@ module "k8s_cluster" {
 module "vault_server" {
   depends_on = [ module.postgres, module.k8s_cluster ]
   source = "./vault_server"
-  unique_name = var.unique_name
+  unique_name = local.unique_name
   aws_region = var.aws_region
   aws_ami = module.aws_infra.aws_ami_ubuntu
   vault_instance_type = var.aws_vault_node_instance_type
