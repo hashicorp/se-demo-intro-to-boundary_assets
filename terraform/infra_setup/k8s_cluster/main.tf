@@ -284,30 +284,3 @@ resource "aws_instance" "k8s_cluster" {
     region = "${var.aws_region}"
   }
 }
-
-/*
-resource "aws_lb" "k8s_worker" {
-  name = var.unique_name
-  load_balancer_type = "network"
-  subnets = [ var.k8s_boundary_worker_lb_subnet_id ]
-}
-
-resource "aws_lb_target_group" "k8s_nodes_boundary" {
-  name = "${var.unique_name}-k8s-nodes-boundary"
-  port = 30092
-  protocol = "TCP"
-  vpc_id = var.aws_vpc
-}
-
-resource "aws_lb_target_group_attachment" "k8s_node_targets" {
-  
-}
-
-resource "aws_lb_listener" "k8s_api" {
-  
-}
-
-resource "aws_lb_listener_rule" {
-
-}
-*/
