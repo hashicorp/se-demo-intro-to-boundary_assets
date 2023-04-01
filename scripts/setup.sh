@@ -8,6 +8,7 @@ export HCP_CLIENT_SECRET=""
 export BOUNDARY_TOKEN=""
 export BOUNDARY_ADDR=""
 export TF_BASE=""
+export TF_VAR_unique_name=""
 export TF_VAR_boundary_cluster_admin_url=""
 export TF_VAR_create_postgres=true
 export TF_VAR_create_k8s=true

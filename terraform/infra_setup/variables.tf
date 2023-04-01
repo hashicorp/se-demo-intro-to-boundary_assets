@@ -1,5 +1,6 @@
 variable "unique_name" {
   type = string
+  default=""
 }
 
 variable "aws_region" {
