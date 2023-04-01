@@ -3,11 +3,6 @@ variable "unique_name" {
   default = ""
 }
 
-variable "create_boundary" {
-  type = bool
-  default = true
-}
-
 variable "boundary_admin_login" {
   type = string
   default = "admin"
