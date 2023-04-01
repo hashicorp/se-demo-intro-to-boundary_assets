@@ -1,3 +1,8 @@
+output "unique_name" {
+  description = "The unique name used to create resources in this workspace."
+  value = local.unique_name
+}
+
 output "aws_region" {
   description = "The AWS region."
   value = var.aws_region
