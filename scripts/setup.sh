@@ -2,14 +2,16 @@
 
 set -euo pipefail
 
-HCP_CLIENT_ID=""
-HCP_CLIENT_SECRET=""
-TF_BASE=""
-TF_VAR_boundary_cluster_admin_url=""
-TF_VAR_admin_ip_additional=""
-BOUNDARY_TOKEN=""
-BOUNDARY_ADDR=""
-
+create_boundary=true
+export HCP_CLIENT_ID=""
+export HCP_CLIENT_SECRET=""
+export BOUNDARY_TOKEN=""
+export BOUNDARY_ADDR=""
+export TF_BASE=""
+export TF_VAR_boundary_cluster_admin_url=""
+export TF_VAR_create_postgres=true
+export TF_VAR_create_k8s=true
+export TF_VAR_admin_ip_additional=""
 
 if [[ -f ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh ]]; then
   source ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
@@ -26,10 +28,6 @@ if [[ -z "$TF_BASE" ]]; then
   export TF_BASE="$(realpath $(dirname $0)/../terraform)"
   echo "export TF_BASE=\"$TF_BASE\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
 fi
-
-TF_VAR_create_postgres=true
-TF_VAR_create_k8s=true
-TF_VAR_create_boundary=true
 
 default_setup_info_text=\
 "This track sets up an HCP Boundary cluster (or uses an existing one you 
@@ -96,11 +94,11 @@ while [ $boundary_cluster_info_success != "true" ]; do
       create_boundary=true
       if [ -z "$HCP_CLIENT_ID" ]; then
         read -p "HCP service principal client ID: " hcp_user_client_id
-        export HCP_CLIENT_ID="$hcp_user_client_id"
+        HCP_CLIENT_ID="$hcp_user_client_id"
       fi
       if [ -z "$HCP_CLIENT_SECRET" ]; then
         read -sp "HCP service principal client secret (not shown): " hcp_user_client_secret
-        export HCP_CLIENT_SECRET="$hcp_user_client_secret"
+        HCP_CLIENT_SECRET="$hcp_user_client_secret"
       fi
       echo ""
     else
@@ -126,7 +124,7 @@ while [ $boundary_cluster_info_success != "true" ]; do
         echo ""
       else
         boundary_cluster_info_success="true"
-        TF_VAR_create_boundary=false
+        create_boundary=false
         echo ""
         echo "Existing Boundary cluster will be used with the supplied admin "
         echo "credentials."
@@ -145,7 +143,7 @@ while [ $boundary_cluster_info_success != "true" ]; do
     fi
   else
     boundary_cluster_info_success="true"
-    TF_VAR_create_boundary=false
+    create_boundary=false
     echo ""
     echo "Existing Boundary cluster will be used with the existing token."
   fi
@@ -191,39 +189,30 @@ if ! grep "export TF_VAR_admin_ip_additional=\"$TF_VAR_admin_ip_additional\"" ~/
   echo "export TF_VAR_admin_ip_additional=\"$TF_VAR_admin_ip_additional\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
 fi
 
-if [[ $TF_VAR_create_k8s || $TF_VAR_create_postgres || $TF_VAR_create_boundary ]]; then
+if [[ $TF_VAR_create_k8s || $TF_VAR_create_postgres || $create_boundary ]]; then
   echo ""
 fi
 
-if $TF_VAR_create_boundary ; then
+if $create_boundary ; then
   echo "Will create the Boundary cluster."
 fi
-export TF_VAR_create_boundary
 
 if $TF_VAR_create_k8s ; then
   echo "Will create the Kubernetes cluster."
 fi
-export TF_VAR_create_k8s
 
 if $TF_VAR_create_postgres ; then
   echo "Will create the Postgres database instance."
 fi
-export TF_VAR_create_postgres
 
 if [[ ! -z "$TF_VAR_admin_ip_additional" ]] ; then
   echo ""
   echo "Will allow access to this IP: $TF_VAR_admin_ip_additional"
 fi
 
-if ! [[ -z "$TF_VAR_boundary_cluster_admin_url" ]]; then
-  export TF_VAR_boundary_cluster_admin_url
-  echo "export TF_VAR_boundary_cluster_admin_url=\"$TF_VAR_boundary_cluster_admin_url\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
-
-fi
-
 read -p "If everything above looks correct, press Enter to deploy the infrastructure." wait_for_ok
 
-if $TF_VAR_create_boundary ; then
+if $create_boundary ; then
   cd ${TF_BASE}/hcp
   if ! terraform init ; then
     echo "HCP Boundary cluster workspace init failed." >&2
@@ -239,28 +228,31 @@ if $TF_VAR_create_boundary ; then
   else
     hcp_output="$(terraform output -json)"
     echo "$hcp_output" > ${TF_BASE}/hcp_output.json
-    export TF_VAR_unique_name=$(jq -r .unique_name.value <(echo "$hcp_output"))
-    echo "export TF_VAR_unique_name=\"$TF_VAR_unique_name\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
-    export TF_VAR_boundary_cluster_admin_url=$(jq -r .boundary_cluster_admin_url.value <(echo "$hcp_output"))
-    echo "export TF_VAR_boundary_cluster_admin_url=\"$TF_VAR_boundary_cluster_admin_url\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
-    boundary_admin_auth_method=$(jq -r .boundary_cluster_admin_auth_method.value <(echo "$hcp_output"))
-    export boundary_admin_auth_method
-    boundary_admin_login=$(jq -r .boundary_admin_login.value <(echo "$hcp_output"))
-    export boundary_admin_login
+    TF_VAR_unique_name=$(jq -r .unique_name.value <(echo "$hcp_output"))
+    TF_VAR_boundary_cluster_admin_url=$(jq -r .boundary_cluster_admin_url.value <(echo "$hcp_output"))
+    export boundary_admin_auth_method=$(jq -r .boundary_cluster_admin_auth_method.value <(echo "$hcp_output"))
+    export boundary_admin_login=$(jq -r .boundary_admin_login.value <(echo "$hcp_output"))
     boundary_admin_password=$(jq -r .boundary_admin_password.value <(echo "$hcp_output"))
   fi
 else
   echo "Not creating a Boundary server because one already exists."
-  export TF_VAR_unique_name=""
 fi
 
 echo "HCP Boundary admin URL: $TF_VAR_boundary_cluster_admin_url"
-export BOUNDARY_ADDR="$TF_VAR_boundary_cluster_admin_url"
-echo "export BOUNDARY_ADDR=\"$TF_VAR_boundary_cluster_admin_url\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
+
+if ! grep "export TF_VAR_boundary_cluster_admin_url=\"$TF_VAR_boundary_cluster_admin_url\"" ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh >/dev/null 2>&1; then
+  echo "export TF_VAR_boundary_cluster_admin_url=\"$TF_VAR_boundary_cluster_admin_url\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
+fi
+
+BOUNDARY_ADDR="$TF_VAR_boundary_cluster_admin_url"
+
+if ! grep "export BOUNDARY_ADDR=\"$TF_VAR_boundary_cluster_admin_url\"" ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh >/dev/null 2>&1; then
+  echo "export BOUNDARY_ADDR=\"$TF_VAR_boundary_cluster_admin_url\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
+fi
 
 if [[ -z "$BOUNDARY_TOKEN" ]]; then
   export BOUNDARY_PASSWORD=$boundary_admin_password
-  export BOUNDARY_TOKEN=$(boundary authenticate password -format json -auth-method-id $boundary_admin_auth_method -login-name $boundary_admin_login -password env://BOUNDARY_PASSWORD | jq -r '.item.attributes.token')
+  BOUNDARY_TOKEN=$(boundary authenticate password -format json -auth-method-id $boundary_admin_auth_method -login-name $boundary_admin_login -password env://BOUNDARY_PASSWORD | jq -r '.item.attributes.token')
   echo "export BOUNDARY_TOKEN=\"$BOUNDARY_TOKEN\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
 else
   echo "Re-using existing Boundary auth token."
@@ -281,10 +273,14 @@ if ! terraform apply -auto-approve ; then
 else
   infra_output=$(terraform output -json)
   echo "$infra_output" > ${TF_BASE}/infra_output.json
-  export TF_VAR_aws_region=$(jq -r .aws_region.value <(echo "$infra_output"))
-  echo "export TF_VAR_aws_region=\"$TF_VAR_aws_region\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
-  export TF_VAR_aws_ami=$(jq -r .aws_ami.value <(echo "$infra_output"))
-  export TF_VAR_aws_boundary_worker_subnet_id=$(jq -r .aws_subnet_public.value <(echo "$infra_output"))
-  export TF_VAR_aws_boundary_worker_secgroup_id=$(jq -r .aws_secgroup_inet.value <(echo "$infra_output"))
-  export TF_VAR_aws_boundary_worker_ssh_keypair=$(jq -r .aws_ssh_key_boundary_infra.value <(echo "$infra_output"))
+
+  TF_VAR_unique_name=$(jq -r .unique_name.value <(echo "$infra_output"))
+  if ! grep "export TF_VAR_unique_name=\"$TF_VAR_unique_name\"" ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh >/dev/null 2>&1; then
+    echo "export TF_VAR_unique_name=\"$TF_VAR_unique_name\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
+  fi
+
+  TF_VAR_aws_region=$(jq -r .aws_region.value <(echo "$infra_output"))
+  if ! grep "export TF_VAR_aws_region=\"$TF_VAR_aws_region\"" ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh >/dev/null 2>&1; then
+    echo "export TF_VAR_aws_region=\"$TF_VAR_aws_region\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
+  fi
 fi
