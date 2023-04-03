@@ -14,6 +14,29 @@ resource "random_pet" "postgres_k8s_admin_password" {
 }
 
 locals {
+  traefik_helm_config = {
+    ports = {
+      web = {
+        nodePort = 30080
+      }
+      websecure = {
+        nodePort = 30443
+      }
+    }
+  }
+
+  k3s_traefik_helm_config = {
+    apiVersion = "helm.cattle.io/v1"
+    kind = "HelmChartConfig"
+    metadata = {
+      name = "traefik"
+      namespace = "kube-system"
+    }
+    spec = {
+      valuesContent = yamlencode(local.traefik_helm_config)
+    }
+  }
+
   boundary_k8s_worker_config = <<-WORKER_CONFIG
     listener "tcp" {
       purpose = "proxy"
@@ -60,6 +83,12 @@ locals {
         content = yamlencode(local.boundary_k8s_worker_service)
         owner = "root:root"
         path = "/tmp/k8s_manifests/boundary_worker/boundary_k8s_worker_svc.yaml"
+        permissions = "0644"
+      },
+      {
+        content = yamlencode(local.k3s_traefik_helm_config)
+        owner = "root:root"
+        path = "/var/lib/rancher/k3s/server/manifests/traefik-config.yaml"
         permissions = "0644"
       },
       {
