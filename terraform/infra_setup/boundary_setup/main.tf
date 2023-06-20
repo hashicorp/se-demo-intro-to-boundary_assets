@@ -61,7 +61,8 @@ locals {
     worker {
       auth_storage_path = "/etc/boundary-worker-data"
       public_addr = "file:///etc/public_dns"
-      controller_generated_activation_token = "${boundary_worker.hcp_pki_instance_worker.controller_generated_activation_token}"
+      controller_generated_activation_token = "${boundary_worker.hcp_pki_instance_worker.controller_generated_activation_token}"  
+      recording_storage_path = "/etc/boundary-recording-data"
 
       tags {
         type = "public_instance"
@@ -123,8 +124,10 @@ locals {
       [ "apt", "update" ],
       [ "sh", "-c", "UCF_FORCE_CONFFOLD=true apt upgrade -y" ],
       [ "mkdir", "/etc/boundary-worker-data" ],
+      [ "mkdir", "/etc/boundary-recording-data" ],
       [ "apt", "install", "-y", "bind9-dnsutils", "jq", "curl", "unzip", "docker-compose", "boundary-worker-hcp" ],
       [ "chown", "boundary:boundary", "/etc/boundary-worker-data" ],
+      [ "chown", "boundary:boundary", "/etc/boundary-recording-data" ],
       [ "sh", "-c", "curl -Ss https://checkip.amazonaws.com > /etc/public_ip" ],
       [ "sh", "-c", "host -t PTR $(curl -Ss https://checkip.amazonaws.com) | awk '{print substr($NF, 1, length($NF)-1)}' > /etc/public_dns" ],
       [ "systemctl", "disable", "--now", "boundary" ], 
