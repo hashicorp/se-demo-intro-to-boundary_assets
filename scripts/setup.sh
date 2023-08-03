@@ -110,8 +110,8 @@ while [ $boundary_cluster_info_success != "true" ]; do
       if echo $use_hcp_project_id_answer | grep -E -i '^n$|^no$' > /dev/null; then
           use_hcp_project_id=false
       else
-          read -p "HCP Project ID: " boundary_project_id
-          HCP_PROJECT_ID="$boundary_project_id"  
+          read -p "HCP Project ID: " hcp_project_id
+          HCP_PROJECT_ID="$hcp_project_id"  
       fi
       echo ""
 
