@@ -3,8 +3,10 @@
 set -euo pipefail
 
 create_boundary=true
+use_hcp_project_id=true
 export HCP_CLIENT_ID=""
 export HCP_CLIENT_SECRET=""
+export HCP_PROJECT_ID=""
 export BOUNDARY_TOKEN=""
 export BOUNDARY_ADDR=""
 export TF_BASE=""
@@ -90,6 +92,7 @@ while [ $boundary_cluster_info_success != "true" ]; do
     echo "This script can create the HCP Boundary cluster for you.  Note that "
     echo "if it already exists, this script will fail and you will need to "
     echo "re-run it with the login info for your existing cluster."
+    echo ""
     read -p "Create Boundary cluster in HCP (default: yes)? " create_boundary_answer
     if ! echo $create_boundary_answer | grep -E -i '^n$|^no$' > /dev/null; then
       create_boundary=true
@@ -102,6 +105,16 @@ while [ $boundary_cluster_info_success != "true" ]; do
         HCP_CLIENT_SECRET="$hcp_user_client_secret"
       fi
       echo ""
+
+      read -p "Is your HCP service principal at a project level (default: yes)? " use_hcp_project_id_answer
+      if echo $use_hcp_project_id_answer | grep -E -i '^n$|^no$' > /dev/null; then
+          use_hcp_project_id=false
+      else
+          read -p "HCP Project ID: " boundary_project_id
+          HCP_PROJECT_ID="$boundary_project_id"  
+      fi
+      echo ""
+
     else
       create_boundary=false
     fi
@@ -140,6 +153,11 @@ while [ $boundary_cluster_info_success != "true" ]; do
       fi
       if ! grep "export HCP_CLIENT_SECRET=\"$HCP_CLIENT_SECRET\"" ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh >/dev/null 2>&1; then
         echo "export HCP_CLIENT_SECRET=\"$HCP_CLIENT_SECRET\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
+      fi
+      if $use_hcp_project_id; then
+        if ! grep "export HCP_PROJECT_ID=\"$HCP_PROJECT_ID\"" ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh >/dev/null 2>&1; then
+        echo "export HCP_PROJECT_ID=\"$HCP_PROJECT_ID\"" >> ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh
+        fi
       fi
     fi
   else
