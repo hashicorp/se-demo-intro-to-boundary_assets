@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 output "unique_name" {
   description = "The unique name used to create resources in this workspace."
   value = local.unique_name

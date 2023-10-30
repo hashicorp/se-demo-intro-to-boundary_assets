@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 output "aws_ami_ubuntu" {
   description = "The latest Ubuntu 22.04 AMI."
   value = data.aws_ami.ubuntu.id
