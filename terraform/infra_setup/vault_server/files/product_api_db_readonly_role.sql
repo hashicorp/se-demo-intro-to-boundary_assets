@@ -1,3 +1,6 @@
+-- Copyright (c) HashiCorp, Inc.
+-- SPDX-License-Identifier: MPL-2.0
+
 CREATE ROLE "{{name}}" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}' NOINHERIT;
 GRANT CONNECT ON DATABASE products TO "{{name}}";
 GRANT USAGE ON SCHEMA public TO "{{name}}";
