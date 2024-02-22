@@ -1,50 +1,60 @@
 variable "unique_name" {
-  type = string
-  default=""
+  type    = string
+  default = ""
 }
 
 variable "aws_region" {
-  type = string
-  default = "us-east-1"
+  type    = string
+  default = "us-west-2"
 }
 
 variable "aws_vpc_cidr" {
-  type = string
+  type    = string
   default = "10.11.0.0/16"
 }
 
 variable "aws_boundary_worker_instance_type" {
-  type = string
+  type    = string
   default = "t3.medium"
 }
 
 variable "aws_vault_node_instance_type" {
-  type = string
+  type    = string
   default = "t3.medium"
 }
 
 variable "aws_k8s_node_instance_type" {
-  type = string
+  type    = string
   default = "t3.large"
 }
 
 variable "aws_postgres_node_instance_type" {
-  type = string
+  type    = string
   default = "t3.medium"
 }
 
+variable "aws_domain_controller_node_instance_type" {
+  type    = string
+  default = "t3.small"
+}
+
 variable "create_postgres" {
-  type = bool
+  type    = bool
   default = true
 }
 
 variable "create_k8s" {
-  type = bool
+  type    = bool
+  default = true
+}
+
+variable "create_domain_controller" {
+  type    = bool
   default = true
 }
 
 variable "admin_ip_additional" {
-  type = string
+  type    = string
   default = ""
 }
 

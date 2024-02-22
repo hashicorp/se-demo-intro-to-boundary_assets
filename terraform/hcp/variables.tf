@@ -1,9 +1,9 @@
 variable "unique_name" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "boundary_admin_login" {
-  type = string
+  type    = string
   default = "admin"
 }

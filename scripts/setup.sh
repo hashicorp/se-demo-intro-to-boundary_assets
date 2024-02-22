@@ -12,6 +12,7 @@ export TF_VAR_unique_name=""
 export TF_VAR_boundary_cluster_admin_url=""
 export TF_VAR_create_postgres=true
 export TF_VAR_create_k8s=true
+export TF_VAR_create_domain_controller=true
 export TF_VAR_admin_ip_additional=""
 
 if [[ -f ~/.${INSTRUQT_PARTICIPANT_ID}-env.sh ]]; then
