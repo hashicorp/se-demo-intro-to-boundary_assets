@@ -26,17 +26,37 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
+data "aws_ami" "windows" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["Windows_Server-2022-English-Full-Base-*"]
+  }
+
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
 data "aws_ec2_instance_type_offerings" "instance_types" {
-  for_each = toset(var.aws_instance_types)
+  for_each      = toset(var.aws_instance_types)
   location_type = "availability-zone"
   filter {
-    name = "instance-type"
-    values = [ each.key ]
+    name   = "instance-type"
+    values = [each.key]
   }
 }
 
 locals {
-  usable_azs = sort(flatten(tolist(setintersection([ for az_set in data.aws_ec2_instance_type_offerings.instance_types : toset(az_set.locations) ]))))
+  usable_azs = sort(flatten(tolist(setintersection([for az_set in data.aws_ec2_instance_type_offerings.instance_types : toset(az_set.locations)]))))
 }
 
 resource "tls_private_key" "aws_infra_ssh_key" {
@@ -44,13 +64,13 @@ resource "tls_private_key" "aws_infra_ssh_key" {
 }
 
 resource "aws_key_pair" "app_infra" {
-  key_name = "${var.unique_name}-app-infra"
+  key_name   = "${var.unique_name}-app-infra"
   public_key = tls_private_key.aws_infra_ssh_key.public_key_openssh
 }
 
 resource "local_file" "aws_infra_ssh_privkey" {
-  content = tls_private_key.aws_infra_ssh_key.private_key_openssh
-  filename = "${path.root}/gen_files/ssh_keys/app_infra"
+  content         = tls_private_key.aws_infra_ssh_key.private_key_openssh
+  filename        = "${path.root}/gen_files/ssh_keys/app_infra"
   file_permission = "0600"
 }
 
@@ -73,7 +93,7 @@ resource "aws_subnet" "boundary_demo_public" {
 }
 
 resource "aws_security_group" "boundary_demo_public" {
-  name = "${var.unique_name}-public"
+  name   = "${var.unique_name}-public"
   vpc_id = aws_vpc.boundary_demo.id
   ingress {
     description = "Unrestricted admin access"
@@ -87,12 +107,12 @@ resource "aws_security_group" "boundary_demo_public" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = [ "0.0.0.0/0" ]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
 resource "aws_security_group" "boundary_demo_private" {
-  name = "${var.unique_name}-private"
+  name   = "${var.unique_name}-private"
   vpc_id = aws_vpc.boundary_demo.id
   ingress {
     description = "VPC-local access only"
@@ -101,12 +121,12 @@ resource "aws_security_group" "boundary_demo_private" {
     protocol    = "-1"
     cidr_blocks = [aws_vpc.boundary_demo.cidr_block]
   }
-  egress { 
+  egress {
     description = "Unrestricted egress"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = [ "0.0.0.0/0" ]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
@@ -120,8 +140,8 @@ resource "aws_eip" "boundary_demo_nat_gw" {
 
 resource "aws_nat_gateway" "boundary_demo_private" {
   allocation_id = aws_eip.boundary_demo_nat_gw.allocation_id
-  subnet_id  = aws_subnet.boundary_demo_public.id
-  depends_on = [aws_internet_gateway.boundary_demo]
+  subnet_id     = aws_subnet.boundary_demo_public.id
+  depends_on    = [aws_internet_gateway.boundary_demo]
 }
 
 resource "aws_route_table" "boundary_demo_public" {
@@ -142,7 +162,7 @@ resource "aws_route_table" "boundary_demo_private" {
   vpc_id = aws_vpc.boundary_demo.id
 
   route {
-    cidr_block = "0.0.0.0/0"
+    cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.boundary_demo_private.id
   }
 }
@@ -150,4 +170,16 @@ resource "aws_route_table" "boundary_demo_private" {
 resource "aws_route_table_association" "boundary_demo_private" {
   subnet_id      = aws_subnet.boundary_demo_private.id
   route_table_id = aws_route_table.boundary_demo_private.id
+}
+
+# Create bucket for session recording
+resource "random_string" "boundary_bucket_suffix" {
+  length  = 8
+  special = false
+  upper   = false
+}
+
+resource "aws_s3_bucket" "boundary_recording_bucket" {
+  bucket        = "boundary-recording-bucket-${random_string.boundary_bucket_suffix.result}"
+  force_destroy = true
 }

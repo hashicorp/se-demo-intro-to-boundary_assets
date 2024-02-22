@@ -1,5 +1,5 @@
 variable "unique_name" {
-  type = string
+  type    = string
   default = "example"
 }
 
@@ -20,7 +20,7 @@ variable "vault_secgroup_id" {
 }
 
 variable "vault_instance_type" {
-  type = string
+  type    = string
   default = "t3.small"
 }
 

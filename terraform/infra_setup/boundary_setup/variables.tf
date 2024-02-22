@@ -31,11 +31,11 @@ variable "boundary_cluster_admin_url" {
 }
 
 variable "boundary_worker_instance_type" {
-  type = string
+  type    = string
   default = "t3.small"
 }
 
 variable "create_k8s" {
-  type = bool
+  type    = bool
   default = true
 }
