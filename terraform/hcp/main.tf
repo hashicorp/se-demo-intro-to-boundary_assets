@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2023
+# SPDX-License-Identifier: MPL-2.0
+
 terraform {
   required_providers {
     hcp = {
