@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright IBM Corp. 2023
+# SPDX-License-Identifier: MPL-2.0
+
 
 set -euo pipefail
 

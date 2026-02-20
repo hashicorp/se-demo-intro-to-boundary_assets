@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2023
+# SPDX-License-Identifier: MPL-2.0
+
 output "dns" {
   description = "The DNS name of the Kubernetes server."
   value = var.create_k8s == true ? aws_instance.k8s_cluster[0].private_dns : ""

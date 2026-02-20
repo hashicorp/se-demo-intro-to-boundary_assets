@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2023
+# SPDX-License-Identifier: MPL-2.0
+
 output "boundary_worker_ip_public" {
   description = "The public IP of the Boundary worker."
   value = aws_instance.boundary_worker.public_ip
