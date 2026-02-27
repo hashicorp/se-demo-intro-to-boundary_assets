@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 variable "unique_name" {
-  type = string
+  type    = string
   default = "example"
 }
 
@@ -15,7 +15,7 @@ variable "aws_ami" {
 }
 
 variable "create_postgres" {
-  type = bool
+  type    = bool
   default = true
 }
 
@@ -28,7 +28,7 @@ variable "pg_secgroup_id" {
 }
 
 variable "pg_instance_type" {
-  type = string
+  type    = string
   default = "t3.small"
 }
 
@@ -37,11 +37,11 @@ variable "pg_ssh_keypair" {
 }
 
 variable "pg_admin_user" {
-  type = string
+  type    = string
   default = "product_api_admin"
 }
 
 variable "pg_vault_user" {
-  type = string
+  type    = string
   default = "vault"
 }

@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: MPL-2.0
 
 variable "unique_name" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "boundary_admin_login" {
-  type = string
+  type    = string
   default = "admin"
 }
